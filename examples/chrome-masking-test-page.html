@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DemoSafe - Masking Test Page</title>
+  <style>
+    body { font-family: -apple-system, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+    h1 { margin-bottom: 8px; }
+    .subtitle { color: #666; margin-bottom: 24px; }
+    section { background: #f9f9f9; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    section h2 { font-size: 16px; margin-bottom: 12px; }
+    .key-row { padding: 8px 0; border-bottom: 1px solid #eee; font-family: monospace; font-size: 14px; word-break: break-all; }
+    .key-row:last-child { border-bottom: none; }
+    .label { color: #666; font-family: sans-serif; font-size: 13px; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <h1>DemoSafe Masking Test Page</h1>
+  <p class="subtitle">This page contains fake API keys for testing the content script masking.</p>
+
+  <section>
+    <h2>Anthropic API Keys</h2>
+    <div class="label">Anthropic Key 1:</div>
+    <div class="key-row">sk-ant-api03-abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKL-MNOPQRSTUV</div>
+    <div class="label">Anthropic Key 2:</div>
+    <div class="key-row">sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-yyyyyyyyyy</div>
+  </section>
+
+  <section>
+    <h2>OpenAI API Keys</h2>
+    <div class="label">OpenAI Key:</div>
+    <div class="key-row">sk-proj-abcdefghijklmnopqrstuvwxyz1234567890abcdefghijklmnop</div>
+  </section>
+
+  <section>
+    <h2>AWS Access Keys</h2>
+    <div class="label">AWS Key:</div>
+    <div class="key-row">AKIAIOSFODNN7EXAMPLE</div>
+  </section>
+
+  <section>
+    <h2>GitHub Tokens</h2>
+    <div class="label">GitHub PAT:</div>
+    <div class="key-row">ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef123456</div>
+  </section>
+
+  <section>
+    <h2>Bearer Token</h2>
+    <div class="label">Authorization Header:</div>
+    <div class="key-row">Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U</div>
+  </section>
+
+  <section>
+    <h2>Database Connection Strings</h2>
+    <div class="label">PostgreSQL:</div>
+    <div class="key-row">postgres://admin:supersecret@db.example.com:5432/mydb</div>
+    <div class="label">MongoDB:</div>
+    <div class="key-row">mongodb://user:password123@mongo.example.com:27017/production</div>
+  </section>
+
+  <section>
+    <h2>Keys matching vault pattern (sk-[a-zA-Z0-9]+)</h2>
+    <div class="label">Simple sk- key:</div>
+    <div class="key-row">sk-abcdefghijklmnopqrstuvwxyz1234567890</div>
+    <div class="label">Another sk- key:</div>
+    <div class="key-row">sk-proj1234567890abcdefABCDEF</div>
+    <div class="label">Inline:</div>
+    <p>My API key is sk-TestKey9876543210 and it should be masked.</p>
+  </section>
+
+  <section>
+    <h2>Mixed Content</h2>
+    <p>Here is a paragraph with an embedded key: My API key is sk-ant-api03-testkey1234567890testkey1234567890testkey12-3456789012 and it should be masked when Demo Mode is ON.</p>
+  </section>
+</body>
+</html>

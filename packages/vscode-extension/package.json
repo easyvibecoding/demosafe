@@ -1,0 +1,68 @@
+{
+  "name": "demosafe-vscode",
+  "displayName": "DemoSafe - API Key Masking",
+  "description": "Mask API keys in your editor during demos and livestreams",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "publisher": "demosafe",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "demosafe.toggleDemoMode",
+        "title": "DemoSafe: Toggle Demo Mode",
+        "icon": "$(shield)"
+      },
+      {
+        "command": "demosafe.pasteKey",
+        "title": "DemoSafe: Paste Key",
+        "icon": "$(key)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "demosafe.toggleDemoMode",
+        "key": "ctrl+alt+cmd+d",
+        "mac": "ctrl+alt+cmd+d"
+      },
+      {
+        "command": "demosafe.pasteKey",
+        "key": "ctrl+alt+space",
+        "mac": "ctrl+alt+space"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
+    "watch": "npm run build -- --watch",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint --ext .ts src/",
+    "test": "mocha --require ts-node/register src/test/**/*.test.ts",
+    "package": "npx @vscode/vsce package"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.0",
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@types/ws": "^8.5.0",
+    "@typescript-eslint/eslint-plugin": "^8.57.0",
+    "@typescript-eslint/parser": "^8.57.0",
+    "esbuild": "^0.20.0",
+    "eslint": "^8.0.0",
+    "mocha": "^10.0.0",
+    "ts-node": "^10.0.0",
+    "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "ws": "^8.16.0"
+  }
+}

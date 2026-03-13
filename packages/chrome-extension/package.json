@@ -1,0 +1,20 @@
+{
+  "name": "demosafe-chrome",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "scripts": {
+    "build": "esbuild src/background/service-worker.ts src/content-scripts/masker.ts src/popup/popup.ts src/options/options.ts --bundle --outdir=dist --format=esm",
+    "watch": "npm run build -- --watch",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint --ext .ts src/"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.260",
+    "@typescript-eslint/eslint-plugin": "^8.57.0",
+    "@typescript-eslint/parser": "^8.57.0",
+    "esbuild": "^0.20.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.4.0"
+  }
+}

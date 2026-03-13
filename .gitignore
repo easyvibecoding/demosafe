@@ -1,0 +1,56 @@
+# === macOS ===
+.DS_Store
+*.swp
+*~
+
+# === Xcode / Swift ===
+packages/swift-core/DerivedData/
+packages/swift-core/.build/
+packages/swift-core/*.xcodeproj/xcuserdata/
+packages/swift-core/*.xcworkspace/xcuserdata/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xccheckout
+*.moved-aside
+xcuserdata/
+
+# === Node.js ===
+node_modules/
+*.tgz
+.npm
+.eslintcache
+
+# === Build outputs ===
+packages/vscode-extension/out/
+packages/vscode-extension/dist/
+packages/vscode-extension/*.vsix
+packages/chrome-extension/dist/
+shared/ipc-protocol/dist/
+
+# === Environment & secrets ===
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# === IDE & tools ===
+.idea/
+.vscode/
+.claude/
+
+# === Runtime data ===
+.demosafe/
+
+# === Source docs (binary, markdown versions in docs/) ===
+*.docx
+
+# === Bootstrap / private ===
+CLAUDE_CODE_BOOTSTRAP.md
+
+# === Test & coverage ===
+coverage/
+.nyc_output/
+lcov.info

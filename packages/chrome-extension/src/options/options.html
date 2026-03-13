@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DemoSafe Options</title>
+  <style>
+    body {
+      max-width: 600px;
+      margin: 40px auto;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: #333;
+      padding: 0 20px;
+    }
+    h1 { margin-bottom: 8px; }
+    .subtitle { color: #666; margin-bottom: 24px; }
+    section {
+      background: #f9f9f9;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    section h2 { font-size: 16px; margin-bottom: 8px; }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: #666; }
+    .info-value { font-weight: 500; font-family: monospace; }
+    .cache-actions { margin-top: 12px; }
+    button {
+      padding: 8px 16px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: white;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    button:hover { background: #f0f0f0; }
+    button.danger { color: #e94560; border-color: #e94560; }
+    button.danger:hover { background: #fff5f7; }
+    button.primary { color: white; background: #1a1a2e; border-color: #1a1a2e; }
+    button.primary:hover { background: #2a2a4e; }
+    .form-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .form-row label { min-width: 60px; color: #666; font-size: 13px; }
+    .form-row input {
+      flex: 1;
+      padding: 6px 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 13px;
+    }
+    .form-actions { display: flex; gap: 8px; margin-top: 8px; }
+    .status-msg { font-size: 12px; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <h1>DemoSafe Options</h1>
+  <p class="subtitle">Chrome Extension for API Key Masking</p>
+
+  <section>
+    <h2>Dev IPC Config</h2>
+    <p style="font-size: 12px; color: #999; margin-bottom: 12px;">
+      For development without Native Messaging Host. Get values from ~/.demosafe/ipc.json
+    </p>
+    <div class="form-row">
+      <label>Port</label>
+      <input type="number" id="devPort" placeholder="e.g. 55535">
+    </div>
+    <div class="form-row">
+      <label>Token</label>
+      <input type="text" id="devToken" placeholder="Paste token from ipc.json">
+    </div>
+    <div class="form-actions">
+      <button class="primary" id="saveDevConfig">Save & Reconnect</button>
+      <button id="clearDevConfig">Clear</button>
+    </div>
+    <div class="status-msg" id="devConfigStatus"></div>
+  </section>
+
+  <section>
+    <h2>Pattern Cache</h2>
+    <div class="info-row">
+      <span class="info-label">Cached Patterns</span>
+      <span class="info-value" id="cacheCount">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Last Updated</span>
+      <span class="info-value" id="cacheTimestamp">—</span>
+    </div>
+    <div class="cache-actions">
+      <button class="danger" id="clearCache">Clear Cache</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Security</h2>
+    <div class="info-row">
+      <span class="info-label">Connection</span>
+      <span class="info-value">localhost only (127.0.0.1)</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Authentication</span>
+      <span class="info-value">Handshake token per session</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Plaintext in Extension</span>
+      <span class="info-value">Never</span>
+    </div>
+  </section>
+
+  <script src="../../dist/options/options.js" type="module"></script>
+</body>
+</html>
