@@ -1,0 +1,9 @@
+{
+  "name": "com.demosafe.nmh",
+  "description": "DemoSafe Native Messaging Host — reads ipc.json for Chrome Extension",
+  "path": "/Applications/DemoSafe.app/Contents/Helpers/demosafe-nmh",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://EXTENSION_ID_HERE/"
+  ]
+}

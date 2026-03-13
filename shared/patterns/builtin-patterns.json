@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "patterns": [
+    {
+      "service": "OpenAI",
+      "pattern": "sk-proj-[A-Za-z0-9_-]{20,}",
+      "showPrefix": 8,
+      "showSuffix": 0,
+      "phase": "mvp"
+    },
+    {
+      "service": "Anthropic",
+      "pattern": "sk-ant-[A-Za-z0-9_-]{20,}",
+      "showPrefix": 7,
+      "showSuffix": 0,
+      "phase": "mvp"
+    },
+    {
+      "service": "AWS Access Key",
+      "pattern": "AKIA[0-9A-Z]{16}",
+      "showPrefix": 4,
+      "showSuffix": 0,
+      "phase": "mvp"
+    },
+    {
+      "service": "AWS Secret Key",
+      "pattern": "[A-Za-z0-9/+=]{40}",
+      "showPrefix": 0,
+      "showSuffix": 0,
+      "phase": "mvp"
+    },
+    {
+      "service": "Stripe Live Secret",
+      "pattern": "sk_live_[A-Za-z0-9]{24,}",
+      "showPrefix": 8,
+      "showSuffix": 0,
+      "phase": "mvp"
+    },
+    {
+      "service": "Google Cloud API Key",
+      "pattern": "AIza[0-9A-Za-z_-]{35}",
+      "showPrefix": 4,
+      "showSuffix": 0,
+      "phase": "mvp"
+    },
+    {
+      "service": "GitHub PAT",
+      "pattern": "ghp_[A-Za-z0-9]{36}",
+      "showPrefix": 4,
+      "showSuffix": 0,
+      "phase": "mvp"
+    },
+    {
+      "service": "AWS Session Token",
+      "pattern": "ASIA[0-9A-Z]{16}",
+      "showPrefix": 4,
+      "showSuffix": 0,
+      "phase": "phase2"
+    },
+    {
+      "service": "Stripe Live Publishable",
+      "pattern": "pk_live_[A-Za-z0-9]{24,}",
+      "showPrefix": 8,
+      "showSuffix": 0,
+      "phase": "phase2"
+    },
+    {
+      "service": "Stripe Test Secret",
+      "pattern": "sk_test_[A-Za-z0-9]{24,}",
+      "showPrefix": 8,
+      "showSuffix": 0,
+      "phase": "phase2"
+    },
+    {
+      "service": "GitHub Fine-grained PAT",
+      "pattern": "github_pat_[A-Za-z0-9_]{22,}",
+      "showPrefix": 11,
+      "showSuffix": 0,
+      "phase": "phase2"
+    },
+    {
+      "service": "GitLab PAT",
+      "pattern": "glpat-[A-Za-z0-9_-]{20,}",
+      "showPrefix": 6,
+      "showSuffix": 0,
+      "phase": "phase2"
+    },
+    {
+      "service": "Slack Bot Token",
+      "pattern": "xoxb-[0-9A-Za-z-]{24,}",
+      "showPrefix": 5,
+      "showSuffix": 0,
+      "phase": "phase2"
+    },
+    {
+      "service": "Slack User Token",
+      "pattern": "xoxp-[0-9A-Za-z-]{24,}",
+      "showPrefix": 5,
+      "showSuffix": 0,
+      "phase": "phase2"
+    },
+    {
+      "service": "SendGrid API Key",
+      "pattern": "SG\\.[A-Za-z0-9_-]{22}\\.[A-Za-z0-9_-]{43}",
+      "showPrefix": 3,
+      "showSuffix": 0,
+      "phase": "phase2"
+    },
+    {
+      "service": "Hugging Face Token",
+      "pattern": "hf_[A-Za-z0-9]{34,}",
+      "showPrefix": 3,
+      "showSuffix": 0,
+      "phase": "phase2"
+    }
+  ]
+}

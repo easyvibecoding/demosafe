@@ -1,0 +1,23 @@
+{
+  "name": "safe-api-key-manager",
+  "private": true,
+  "license": "Apache-2.0",
+  "description": "Make API keys invisible during demos, livestreams, and tutorials. macOS system-level tool with VS Code and Chrome extensions.",
+  "workspaces": [
+    "packages/vscode-extension",
+    "packages/chrome-extension",
+    "shared/ipc-protocol"
+  ],
+  "scripts": {
+    "build:shared": "npm run build --workspace=shared/ipc-protocol",
+    "build:vscode": "npm run build --workspace=packages/vscode-extension",
+    "build:chrome": "npm run build --workspace=packages/chrome-extension",
+    "build:all": "npm run build:shared && npm run build:vscode && npm run build:chrome",
+    "type-check": "npm run type-check --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test:ts": "npm run test --workspaces --if-present"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

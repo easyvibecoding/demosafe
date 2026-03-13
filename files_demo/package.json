@@ -1,0 +1,127 @@
+{
+  "name": "secret-shield",
+  "displayName": "Secret Shield - 主動防禦",
+  "description": "用代理終端攔截並遮蔽 API key、密碼等敏感資訊。適合 Claude Code 展示操作和直播使用。",
+  "version": "2.0.0",
+  "publisher": "your-publisher-name",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Security"
+  ],
+  "keywords": [
+    "security", "secrets", "mask", "terminal", "api-key",
+    "password", "privacy", "presentation", "claude-code", "shield"
+  ],
+  "icon": "images/icon.png",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "secretShield.toggle",
+        "title": "Secret Shield: 切換開關 (Toggle)",
+        "icon": "$(shield)"
+      },
+      {
+        "command": "secretShield.openTerminal",
+        "title": "Secret Shield: 開啟受保護終端 (Open Shielded Terminal)",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "secretShield.openTerminalWithCommand",
+        "title": "Secret Shield: 開啟受保護終端並執行命令"
+      },
+      {
+        "command": "secretShield.presentationMode",
+        "title": "Secret Shield: 展示模式 (Presentation Mode)",
+        "icon": "$(broadcast)"
+      },
+      {
+        "command": "secretShield.openFallbackTerminal",
+        "title": "Secret Shield: 開啟備用終端 (Fallback, 無需 node-pty)"
+      },
+      {
+        "command": "secretShield.scanCurrent",
+        "title": "Secret Shield: 掃描當前檔案"
+      },
+      {
+        "command": "secretShield.addPattern",
+        "title": "Secret Shield: 新增自訂偵測模式"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "secretShield.toggle",
+        "key": "ctrl+shift+h",
+        "mac": "cmd+shift+h"
+      },
+      {
+        "command": "secretShield.openTerminal",
+        "key": "ctrl+shift+t",
+        "mac": "cmd+shift+t"
+      }
+    ],
+    "configuration": {
+      "title": "Secret Shield",
+      "properties": {
+        "secretShield.autoEnable": {
+          "type": "boolean",
+          "default": false,
+          "description": "啟動 VS Code 時自動啟用 Secret Shield"
+        },
+        "secretShield.shellPath": {
+          "type": "string",
+          "default": "",
+          "description": "自訂 shell 路徑（留空使用系統預設）"
+        },
+        "secretShield.shellArgs": {
+          "type": "array",
+          "default": [],
+          "description": "自訂 shell 參數",
+          "items": { "type": "string" }
+        },
+        "secretShield.customPatterns": {
+          "type": "array",
+          "default": [],
+          "description": "自訂偵測模式列表",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "description": "模式名稱" },
+              "regex": { "type": "string", "description": "正則表達式" },
+              "mask": { "type": "string", "description": "遮蔽替代文字", "default": "••••••••••" }
+            },
+            "required": ["name", "regex"]
+          }
+        }
+      }
+    },
+    "menus": {
+      "editor/title": [
+        { "command": "secretShield.toggle", "group": "navigation" }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "package": "vsce package",
+    "postinstall": "node scripts/install-node-pty.js || true"
+  },
+  "dependencies": {
+    "node-pty": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0",
+    "@vscode/vsce": "^2.22.0"
+  }
+}

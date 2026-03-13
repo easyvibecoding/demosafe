@@ -1,0 +1,13 @@
+{
+  "description": "Test fixture keys for pattern matching validation. ALL VALUES ARE FAKE.",
+  "fixtures": [
+    { "service": "OpenAI", "value": "sk-proj-Abc1234567890xYzAbCd", "shouldMatch": true },
+    { "service": "Anthropic", "value": "sk-ant-api03-AbCdEfGh1234567890xYz", "shouldMatch": true },
+    { "service": "AWS Access Key", "value": "AKIAIOSFODNN7EXAMPLE", "shouldMatch": true },
+    { "service": "Stripe Live", "value": "sk_live_51HbFOOBARBAZQUXfoobar", "shouldMatch": true },
+    { "service": "Google Cloud", "value": "AIzaSyB12345678901234567890123456789ab", "shouldMatch": true },
+    { "service": "GitHub PAT", "value": "ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789", "shouldMatch": true },
+    { "service": "Not a key", "value": "hello-world-this-is-not-a-key", "shouldMatch": false },
+    { "service": "Short string", "value": "sk-proj-short", "shouldMatch": false }
+  ]
+}

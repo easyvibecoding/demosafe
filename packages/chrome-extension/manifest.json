@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "DemoSafe - API Key Masking",
+  "description": "Mask API keys on web pages during demos and livestreams",
+  "version": "0.1.0",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "nativeMessaging",
+    "tabs"
+  ],
+  "background": {
+    "service_worker": "dist/background/service-worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://platform.openai.com/*",
+        "https://console.anthropic.com/*",
+        "https://console.aws.amazon.com/*",
+        "https://dashboard.stripe.com/*",
+        "https://console.cloud.google.com/*",
+        "https://portal.azure.com/*",
+        "https://github.com/settings/tokens*",
+        "https://huggingface.co/settings/tokens*",
+        "https://app.sendgrid.com/*",
+        "https://api.slack.com/*"
+      ],
+      "js": ["dist/content-scripts/masker.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_icon": {
+      "16": "assets/icon-16.png",
+      "48": "assets/icon-48.png",
+      "128": "assets/icon-128.png"
+    }
+  },
+  "options_page": "src/options/options.html",
+  "icons": {
+    "16": "assets/icon-16.png",
+    "48": "assets/icon-48.png",
+    "128": "assets/icon-128.png"
+  }
+}
