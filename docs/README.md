@@ -14,6 +14,8 @@
 | `06-pattern-reference/` | 內建 regex 樣式庫、遮蔽格式規則、自訂樣式指引 |
 | `07-known-issues-and-improvements.md` | 已知問題與待改進項目 |
 | `08-terminal-masking-research.md` | Terminal Masking 技術研究（node-pty vs ANSI fg=bg vs 混合方案） |
+| `09-api-key-rotation-best-practices.md` | 各平台 API Key 部署與輪替最佳實踐、零停機輪替模式 |
+| `10-active-key-capture.md` | 主動式 API Key 網頁截取（Chrome Extension 自動偵測擷取） |
 
 ## 來源文件對照
 

@@ -153,6 +153,8 @@ swift test             # 執行測試
 - [ ] 智慧 Key 擷取（網頁掃描）
 - [ ] 關聯 Key 群組（順序貼上）
 - [ ] Chrome Native Messaging Host
+- [ ] 主動式 Key 截取（網頁自動偵測擷取，無需手動複製）
+- [ ] API Key 輪替與部署同步
 - [ ] Terminal 遮蔽（node-pty proxy）
 - [ ] 系統級遮蔽（Accessibility API）
 

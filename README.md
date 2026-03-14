@@ -153,6 +153,8 @@ See the [docs/](docs/) directory for detailed specifications:
 - [ ] Smart Key Extraction from web pages
 - [ ] Linked Key Groups (sequential paste)
 - [ ] Native Messaging Host for Chrome
+- [ ] Active Key Capture (auto-detect keys from web pages)
+- [ ] API Key rotation & deployment sync
 - [ ] Terminal masking (node-pty proxy)
 - [ ] System-wide masking (Accessibility API)
 
