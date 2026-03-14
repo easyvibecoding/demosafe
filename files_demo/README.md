@@ -127,4 +127,4 @@ npm run compile
 
 ## 授權
 
-MIT License
+Apache License 2.0 — 見專案根目錄 [LICENSE](../LICENSE)
