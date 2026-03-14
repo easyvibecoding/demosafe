@@ -1,5 +1,7 @@
 # Demo-safe API Key Manager
 
+**English** | [繁體中文](README.zh-TW.md)
+
 **Make API keys invisible during demos, livestreams, and tutorials.**
 
 Demo-safe is a macOS system-level tool that masks API keys from the moment they enter your workflow. Like macOS Keychain, keys are never displayed in plaintext on any screen — yet they remain fully functional via copy-paste.
