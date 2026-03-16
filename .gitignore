@@ -55,3 +55,4 @@ CLAUDE_CODE_BOOTSTRAP.md
 coverage/
 .nyc_output/
 lcov.info
+scripts/platform-analysis/reports/*.json
