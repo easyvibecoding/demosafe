@@ -31,14 +31,15 @@ struct FloatingToolboxView: View {
             .cornerRadius(8)
 
             // Key list
-            if toolboxState.filteredKeys.isEmpty {
-                Text("No keys found")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .frame(maxWidth: .infinity, minHeight: 40)
-            } else {
-                ScrollViewReader { proxy in
-                    ScrollView {
+            // Key list — fixed height to prevent layout collapse
+            ScrollViewReader { proxy in
+                ScrollView {
+                    if toolboxState.filteredKeys.isEmpty {
+                        Text("No keys found")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity, minHeight: 40)
+                    } else {
                         VStack(spacing: 2) {
                             ForEach(Array(toolboxState.filteredKeys.enumerated()), id: \.element.id) { offset, item in
                                 ToolboxKeyRow(
@@ -51,11 +52,11 @@ struct FloatingToolboxView: View {
                             }
                         }
                     }
-                    .frame(maxHeight: 200)
-                    .onChange(of: toolboxState.selectedIndex) {
-                        withAnimation(.easeOut(duration: 0.1)) {
-                            proxy.scrollTo(toolboxState.selectedIndex, anchor: .center)
-                        }
+                }
+                .frame(height: 200)
+                .onChange(of: toolboxState.selectedIndex) {
+                    withAnimation(.easeOut(duration: 0.1)) {
+                        proxy.scrollTo(toolboxState.selectedIndex, anchor: .center)
                     }
                 }
             }

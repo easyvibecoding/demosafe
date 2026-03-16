@@ -1,5 +1,8 @@
 import Foundation
 import Combine
+import os
+
+private let logger = Logger(subsystem: "com.demosafe", category: "ToolboxState")
 
 /// ViewModel managing all floating toolbox interaction state.
 /// Separates toolbox logic from the view layer for testability.
@@ -49,8 +52,12 @@ final class ToolboxState: ObservableObject {
     /// If 1 result: auto-copy and dismiss. If >1: enter locked mode.
     func handleRelease(copyAction: (UUID) -> Void) {
         let keys = filteredKeys
+        logger.warning("handleRelease: filteredKeys.count=\(keys.count), searchText='\(self.searchText)'")
+
         if keys.count == 1 {
-            copyAction(keys[0].key.id)
+            let keyId = keys[0].key.id
+            logger.warning("Auto-copy key: \(keyId.uuidString)")
+            copyAction(keyId)
             dismiss()
         } else if keys.count > 1 {
             isLocked = true

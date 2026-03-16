@@ -5,6 +5,7 @@ import SwiftUI
 /// Uses NSPanel (not NSWindow) for non-activating, always-on-top HUD behavior.
 final class FloatingToolboxController {
     private var panel: NSPanel?
+    private var hostingView: NSHostingView<AnyView>?
     private var toolboxState: ToolboxState?
     private weak var appState: AppState?
 
@@ -18,19 +19,36 @@ final class FloatingToolboxController {
         guard let appState, let toolboxState else { return }
 
         if panel == nil {
-            createPanel(appState: appState, toolboxState: toolboxState)
+            createPanel()
+        }
+
+        // Rebuild SwiftUI content each time to avoid stale layout
+        let contentView = FloatingToolboxView()
+            .environmentObject(appState)
+            .environmentObject(toolboxState)
+
+        if let hostingView {
+            hostingView.rootView = AnyView(contentView)
+        } else {
+            let hv = NSHostingView(rootView: AnyView(contentView))
+            self.hostingView = hv
+            panel?.contentView = hv
         }
 
         guard let panel else { return }
+
+        // Let SwiftUI determine the size, then position
+        hostingView?.invalidateIntrinsicContentSize()
+        let fittingSize = hostingView?.fittingSize ?? NSSize(width: 280, height: 300)
+        panel.setContentSize(fittingSize)
 
         // Position near cursor, clamped to screen bounds
         let panelSize = panel.frame.size
         var origin = NSPoint(
             x: point.x - panelSize.width / 2,
-            y: point.y - panelSize.height - 8 // Below cursor
+            y: point.y - panelSize.height - 8
         )
 
-        // Clamp to visible screen
         if let screen = NSScreen.main?.visibleFrame {
             origin.x = max(screen.minX + 4, min(origin.x, screen.maxX - panelSize.width - 4))
             origin.y = max(screen.minY + 4, min(origin.y, screen.maxY - panelSize.height - 4))
@@ -52,22 +70,14 @@ final class FloatingToolboxController {
 
     // MARK: - Private
 
-    private func createPanel(appState: AppState, toolboxState: ToolboxState) {
-        let contentView = FloatingToolboxView()
-            .environmentObject(appState)
-            .environmentObject(toolboxState)
-
-        let hostingView = NSHostingView(rootView: contentView)
-        hostingView.frame = NSRect(x: 0, y: 0, width: 280, height: 320)
-
+    private func createPanel() {
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 280, height: 320),
+            contentRect: NSRect(x: 0, y: 0, width: 280, height: 300),
             styleMask: [.nonactivatingPanel, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
 
-        panel.contentView = hostingView
         panel.level = .floating
         panel.isFloatingPanel = true
         panel.becomesKeyOnlyIfNeeded = true
