@@ -24,7 +24,7 @@ func readMessage() -> Data? {
 func writeMessage(_ data: Data) {
     var length = UInt32(data.count)
     fwrite(&length, 4, 1, stdout)
-    data.withUnsafeBytes { fwrite($0.baseAddress, 1, data.count, stdout) }
+    _ = data.withUnsafeBytes { fwrite($0.baseAddress, 1, data.count, stdout) }
     fflush(stdout)
 }
 

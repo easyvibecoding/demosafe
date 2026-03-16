@@ -6,6 +6,7 @@
 # === Xcode / Swift ===
 packages/swift-core/DerivedData/
 packages/swift-core/.build/
+packages/chrome-extension/native-host/demosafe-nmh
 packages/swift-core/*.xcodeproj/xcuserdata/
 packages/swift-core/*.xcworkspace/xcuserdata/
 *.pbxuser
