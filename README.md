@@ -148,12 +148,13 @@ See the [docs/](docs/) directory for detailed specifications:
 - [x] Swift Core Engine (Vault, Keychain, Clipboard, IPC, Masking)
 - [x] VS Code Extension (Editor Decoration masking)
 - [x] Chrome Extension (DOM masking, WebSocket IPC)
-- [ ] Floating Toolbox HUD (hold-to-search)
-- [ ] Keyboard shortcut paste (Ctrl+Option+[1-9])
-- [ ] Smart Key Extraction from web pages
+- [x] Floating Toolbox HUD (hold-to-search + Scheme B lock)
+- [x] Keyboard shortcut paste (Ctrl+Option+[1-9])
+- [x] Native Messaging Host for Chrome
+- [x] Active Key Capture (auto-detect keys from web pages)
+- [ ] Platform-specific capture strategies (per-site DOM selectors)
+- [ ] Smart Key Extraction confirmation dialog
 - [ ] Linked Key Groups (sequential paste)
-- [ ] Native Messaging Host for Chrome
-- [ ] Active Key Capture (auto-detect keys from web pages)
 - [ ] API Key rotation & deployment sync
 - [ ] Terminal masking (node-pty proxy)
 - [ ] System-wide masking (Accessibility API)

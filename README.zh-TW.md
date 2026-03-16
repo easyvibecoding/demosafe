@@ -148,12 +148,13 @@ swift test             # 執行測試
 - [x] Swift Core Engine（Vault、Keychain、Clipboard、IPC、Masking）
 - [x] VS Code Extension（Editor Decoration 遮蔽）
 - [x] Chrome Extension（DOM 遮蔽、WebSocket IPC）
-- [ ] 浮動工具箱 HUD（按住搜尋）
-- [ ] 快捷鍵貼上（Ctrl+Option+[1-9]）
-- [ ] 智慧 Key 擷取（網頁掃描）
+- [x] 浮動工具箱 HUD（按住搜尋 + Scheme B 鎖定）
+- [x] 快捷鍵貼上（Ctrl+Option+[1-9]）
+- [x] Chrome Native Messaging Host
+- [x] 主動式 Key 截取（網頁自動偵測擷取，三層掃描）
+- [ ] 各平台專屬截取策略（DOM 選擇器 + Modal 監聽）
+- [ ] 智慧 Key 擷取確認對話框
 - [ ] 關聯 Key 群組（順序貼上）
-- [ ] Chrome Native Messaging Host
-- [ ] 主動式 Key 截取（網頁自動偵測擷取，無需手動複製）
 - [ ] API Key 輪替與部署同步
 - [ ] Terminal 遮蔽（node-pty proxy）
 - [ ] 系統級遮蔽（Accessibility API）

@@ -7,10 +7,13 @@
  * - Forward Core events to content scripts
  * - Persist pattern cache to chrome.storage.local
  * - Respond to popup/options requests
+ * - Manage Active Key Capture mode with alarm-based timeout
  */
 
 const NATIVE_HOST_ID = 'com.demosafe.nmh';
 const MAX_RECONNECT_DELAY = 30000;
+const CAPTURE_TIMEOUT_MS = 300_000; // 5 minutes
+const CAPTURE_ALARM_NAME = 'demosafe_capture_timeout';
 
 interface IPCConfig {
     port: number;
@@ -30,6 +33,9 @@ interface DemoSafeState {
     isDemoMode: boolean;
     activeContextName: string | null;
     patternCount: number;
+    isCaptureMode: boolean;
+    captureTimeoutEnd: number | null; // timestamp ms
+    capturedCount: number;
 }
 
 let ws: WebSocket | null = null;
@@ -41,16 +47,17 @@ const state: DemoSafeState = {
     isDemoMode: false,
     activeContextName: null,
     patternCount: 0,
+    isCaptureMode: false,
+    captureTimeoutEnd: null,
+    capturedCount: 0,
 };
 
 // MARK: - Native Messaging Host
 
 async function getIPCConfig(): Promise<IPCConfig | null> {
-    // Try Native Messaging Host first
     const nativeConfig = await getNativeConfig();
     if (nativeConfig) return nativeConfig;
 
-    // Dev fallback: try config stored in chrome.storage.local
     const stored = await chrome.storage.local.get(['devIPCPort', 'devIPCToken']);
     if (stored.devIPCPort && stored.devIPCToken) {
         return { port: stored.devIPCPort, token: stored.devIPCToken };
@@ -78,7 +85,6 @@ async function getNativeConfig(): Promise<IPCConfig | null> {
 // MARK: - WebSocket Connection
 
 async function connect() {
-    // Close existing connection if any
     if (ws) {
         ws.onclose = null;
         ws.close();
@@ -150,10 +156,9 @@ function sendRequestToCore(action: string, payload: Record<string, unknown>) {
     });
 }
 
-// MARK: - Message Handling
+// MARK: - Message Handling (from Core)
 
 function handleMessage(message: IPCMessage) {
-    // Handshake response
     if (message.type === 'response' && message.action === 'handshake') {
         if (message.payload.status === 'success') {
             state.isConnected = true;
@@ -163,7 +168,6 @@ function handleMessage(message: IPCMessage) {
         return;
     }
 
-    // Events from Core
     if (message.type === 'event') {
         switch (message.action) {
             case 'state_changed':
@@ -176,8 +180,10 @@ function handleMessage(message: IPCMessage) {
                 handleKeyUpdated(message.payload);
                 break;
             case 'clipboard_cleared':
-                // Forward to content scripts
                 forwardToContentScripts(message);
+                break;
+            case 'capture_mode_changed':
+                handleCaptureModeEvent(message.payload);
                 break;
         }
     }
@@ -200,7 +206,6 @@ function handleStateChanged(payload: Record<string, unknown>) {
 }
 
 function handlePatternCacheSync(payload: Record<string, unknown>) {
-    // Persist to chrome.storage.local for offline use
     chrome.storage.local.set({
         patternCache: payload,
         patternCacheTimestamp: Date.now(),
@@ -230,15 +235,69 @@ function handleKeyUpdated(payload: Record<string, unknown>) {
     });
 }
 
+// MARK: - Capture Mode Management
+
+function handleCaptureModeEvent(payload: Record<string, unknown>) {
+    const isActive = payload.isActive as boolean;
+    updateCaptureState(isActive);
+}
+
+function updateCaptureState(isActive: boolean) {
+    state.isCaptureMode = isActive;
+
+    if (isActive) {
+        state.captureTimeoutEnd = Date.now() + CAPTURE_TIMEOUT_MS;
+        chrome.alarms.create(CAPTURE_ALARM_NAME, { delayInMinutes: CAPTURE_TIMEOUT_MS / 60000 });
+    } else {
+        state.captureTimeoutEnd = null;
+        chrome.alarms.clear(CAPTURE_ALARM_NAME);
+    }
+
+    // Broadcast to all content scripts
+    forwardToContentScripts({
+        id: '',
+        type: 'event',
+        action: 'capture_mode_changed',
+        payload: {
+            isActive,
+            timeout: isActive ? CAPTURE_TIMEOUT_MS / 1000 : 0,
+        },
+        timestamp: new Date().toISOString(),
+    });
+
+    broadcastStateToPopup();
+}
+
+function disableCaptureMode() {
+    state.isCaptureMode = false;
+    state.captureTimeoutEnd = null;
+    chrome.alarms.clear(CAPTURE_ALARM_NAME);
+
+    forwardToContentScripts({
+        id: '',
+        type: 'event',
+        action: 'capture_mode_changed',
+        payload: { isActive: false, timeout: 0 },
+        timestamp: new Date().toISOString(),
+    });
+
+    broadcastStateToPopup();
+}
+
+// Alarm handler for MV3-safe timeout
+chrome.alarms.onAlarm.addListener((alarm) => {
+    if (alarm.name === CAPTURE_ALARM_NAME) {
+        disableCaptureMode();
+    }
+});
+
 // MARK: - Content Script Communication
 
 function forwardToContentScripts(message: IPCMessage) {
     chrome.tabs.query({}, (tabs) => {
         for (const tab of tabs) {
             if (tab.id) {
-                chrome.tabs.sendMessage(tab.id, message).catch(() => {
-                    // Tab doesn't have content script injected — normal for non-matching URLs
-                });
+                chrome.tabs.sendMessage(tab.id, message).catch(() => {});
             }
         }
     });
@@ -247,12 +306,10 @@ function forwardToContentScripts(message: IPCMessage) {
 // MARK: - Popup Communication
 
 function broadcastStateToPopup() {
-    chrome.runtime.sendMessage({ type: 'state_update', state }).catch(() => {
-        // Popup not open — ignore
-    });
+    chrome.runtime.sendMessage({ type: 'state_update', state }).catch(() => {});
 }
 
-// Listen for messages from popup
+// Listen for messages from popup and content scripts
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message.type === 'get_state') {
         sendResponse(state);
@@ -261,6 +318,33 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
     if (message.type === 'toggle_demo_mode') {
         sendRequestToCore('toggle_demo_mode', {});
+        sendResponse({ ok: true });
+        return true;
+    }
+
+    if (message.type === 'toggle_capture_mode') {
+        const newState = !state.isCaptureMode;
+        if (newState) state.capturedCount = 0;
+        updateCaptureState(newState);
+        if (state.isConnected) {
+            sendRequestToCore('toggle_capture_mode', { isActive: newState });
+        }
+        sendResponse({ ok: true });
+        return true;
+    }
+
+    if (message.type === 'submit_captured_key') {
+        if (state.isConnected) {
+            sendRequestToCore('submit_captured_key', message.payload);
+        }
+        state.capturedCount++;
+        broadcastStateToPopup();
+        sendResponse({ ok: true });
+        return true;
+    }
+
+    if (message.type === 'capture_timed_out') {
+        disableCaptureMode();
         sendResponse({ ok: true });
         return true;
     }
@@ -295,10 +379,8 @@ function scheduleReconnect() {
 
 // MARK: - Lifecycle
 
-// Start connection on install/startup
 connect();
 
-// Reconnect when service worker wakes up
 chrome.runtime.onStartup.addListener(() => {
     connect();
 });

@@ -7,7 +7,8 @@
     "activeTab",
     "storage",
     "nativeMessaging",
-    "tabs"
+    "tabs",
+    "alarms"
   ],
   "background": {
     "service_worker": "dist/background/service-worker.js",
@@ -18,6 +19,7 @@
       "matches": [
         "https://platform.openai.com/*",
         "https://console.anthropic.com/*",
+        "https://platform.claude.com/*",
         "https://console.aws.amazon.com/*",
         "https://dashboard.stripe.com/*",
         "https://console.cloud.google.com/*",
