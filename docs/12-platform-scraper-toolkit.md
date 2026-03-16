@@ -276,6 +276,95 @@ scripts/platform-analysis/reports/
 
 ---
 
+## Claude Code Custom Skill 整合
+
+開發者可將 platform analysis 封裝為 Claude Code 的自訂 skill（slash command），讓任何貢獻者都能用 `/analyze-platform` 一鍵觸發分析。
+
+### Skill 檔案結構
+
+```
+SafeApiKeyManager/
+└── .claude/
+    └── skills/
+        └── analyze-platform/
+            └── SKILL.md
+```
+
+放在**專案根目錄**的 `.claude/skills/` 下（不是 `~/.claude/`）。
+Git 追蹤此目錄（`.gitignore` 排除 `.claude/*` 但保留 `!.claude/skills/`）。
+所有 clone 此專案的開發者自動可用。
+
+### SKILL.md 定義
+
+```yaml
+---
+name: analyze-platform
+description: Analyze API key page DOM structure for capture-patterns.ts maintenance. Use when a platform UI changes or adding a new platform.
+context: fork
+agent: Explore
+---
+
+# Platform DOM Analysis
+
+Analyze the target API key management page to update capture-patterns.ts.
+
+**Arguments**: $ARGUMENTS (platform name or URL, e.g., "openai" or "https://platform.openai.com/api-keys")
+
+## Steps
+
+1. **Navigate** to the target platform's API key page using Chrome MCP tools
+2. **Execute** the analyze-dom.js script via `mcp__claude-in-chrome__javascript_tool`:
+   - Read the script from `scripts/platform-analysis/analyze-dom.js`
+   - Execute it on the target page
+   - Parse the JSON output
+3. **Compare** with current selectors in `packages/chrome-extension/src/content-scripts/capture-patterns.ts`
+4. **Report** findings:
+   - Which selectors still work
+   - Which selectors have changed
+   - New stable selectors found
+   - Key format changes
+5. **Save** the analysis report to `scripts/platform-analysis/reports/{platform}-{date}.json`
+
+## Important
+- Do NOT record actual API key values in the report (truncate to first 20 chars)
+- After completion, list all browser URLs visited and JavaScript executed
+- Do NOT click "Create key" buttons unless explicitly instructed
+```
+
+### 使用方式
+
+```
+開發者在 Claude Code 中輸入：
+
+/analyze-platform openai
+
+Agent 自動：
+1. 導航到 platform.openai.com/api-keys
+2. 執行 analyze-dom.js
+3. 比對 capture-patterns.ts
+4. 輸出差異報告
+```
+
+### Skill 設定說明
+
+| Frontmatter 欄位 | 值 | 說明 |
+|-----------------|-----|------|
+| `name` | `analyze-platform` | Slash command 名稱 |
+| `description` | 見上方 | 用途描述（Agent 可自動判斷是否觸發） |
+| `context: fork` | — | 在隔離的 subagent 中執行，不影響主對話 |
+| `agent: Explore` | — | 使用 Explore agent type（有瀏覽器 tools 存取） |
+
+### 其他可用的 Skill
+
+| Skill 名稱 | 用途 |
+|-----------|------|
+| `/analyze-platform` | 分析單一平台 DOM 結構 |
+| `/analyze-all-platforms` | 批次分析所有已知平台 |
+| `/update-capture-patterns` | 根據分析報告更新 capture-patterns.ts |
+| `/test-capture` | 在測試頁面上驗證 capture 功能 |
+
+---
+
 ## 安全考量
 
 | 風險 | 對策 |

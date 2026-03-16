@@ -40,7 +40,9 @@ shared/ipc-protocol/dist/
 # === IDE & tools ===
 .idea/
 .vscode/
-.claude/
+# Claude Code — ignore private data, track shared skills
+.claude/*
+!.claude/skills/
 
 # === Runtime data ===
 .demosafe/
