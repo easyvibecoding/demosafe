@@ -1,6 +1,6 @@
 # Implementation Status Tracking
 
-> Last updated: 2026-03-14
+> Last updated: 2026-03-16
 
 ## Status Legend
 
@@ -20,7 +20,10 @@
 | ClipboardEngine | ✅ | copy + autoClear + detectKeys completed |
 | MaskingCoordinator | ✅ | isDemoMode / activeContext / pattern matching completed |
 | IPCServer (WebSocket) | ✅ | handshake / state_changed / pattern_cache_sync / toggle_demo_mode |
-| HotkeyManager (basic) | 🔶 | `⌃⌥⌘D` toggle demo mode completed; other hotkeys not yet implemented |
+| HotkeyManager | ✅ | `⌃⌥⌘D` toggle, `⌃⌥Space` hold detection, `⌃⌥[1-9]` paste, flagsChanged listener |
+| Floating Toolbox (HUD) | ✅ | NSPanel floating window, hold-to-search, Scheme B lock, ↑↓ navigation |
+| ToolboxState (ViewModel) | ✅ | Search filtering, selection state, release/confirm/dismiss logic |
+| FloatingToolboxController | ✅ | NSPanel management, cursor positioning, locked mode makeKey |
 | Menu Bar App | ✅ | Native menu style, Demo Mode toggle, Settings window |
 | SettingsWindowController | ✅ | Standalone NSWindow, opens properly from menu bar app |
 | Settings UI | 🔶 | Basic tab framework, Key management + Add Service completed |
@@ -29,10 +32,6 @@
 
 | Feature | Spec Section | Priority |
 |---------|-------------|----------|
-| Floating Toolbox (HUD) | Spec §4.3 | High |
-| Hold-to-search + Scheme B lock | Spec §4.3 | High |
-| `⌃⌥Space` show/hide toolbox | Spec §4.4 | High |
-| `⌃⌥[1-9]` hotkey paste | Spec §4.4 | High |
 | `⌃⌥⌘V` capture clipboard | Spec §4.4 | Medium |
 | Smart Key Extraction | Spec §6 | Medium |
 | Linked Key Groups (sequential paste) | Spec §6.3 | Medium |
@@ -57,6 +56,10 @@
 
 - Decoration text compression: Original text hidden with `opacity: '0'` + `letterSpacing: '-1em'`, masked text padded to original length
 - Gutter icon not found: Reference removed
+
+### Known Notes
+
+- **Keychain ACL**: Test keys added via `security` CLI will trigger system permission prompts when DemoSafe reads them. Keys must be added via `SecItemAdd` API (i.e., `KeychainService.storeKey` or equivalent Swift code) for the app's ACL to be correctly set.
 
 ---
 
@@ -103,10 +106,10 @@ Per Spec §9 Roadmap:
 4. ~~MaskingCoordinator~~ ✅
 5. ~~Menu Bar UI~~ ✅
 
-### Phase 2: Clipboard + Hotkeys 🔶
+### Phase 2: Clipboard + Hotkeys ✅
 6. ~~ClipboardEngine~~ ✅
-7. ~~HotkeyManager (basic)~~ ✅
-8. Floating Toolbox HUD ❌
+7. ~~HotkeyManager (hold detection + flagsChanged + keystroke forwarding)~~ ✅
+8. ~~Floating Toolbox HUD (NSPanel + hold-to-search + Scheme B lock + `⌃⌥[1-9]` paste)~~ ✅
 
 ### Phase 3: IPC + VS Code Extension ✅
 9. ~~IPCServer~~ ✅

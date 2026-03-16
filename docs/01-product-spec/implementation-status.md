@@ -1,6 +1,6 @@
 # 實作狀態追蹤
 
-> 最後更新：2026-03-14
+> 最後更新：2026-03-16
 
 ## 狀態圖例
 
@@ -20,7 +20,10 @@
 | ClipboardEngine | ✅ | copy + autoClear + detectKeys 完成 |
 | MaskingCoordinator | ✅ | isDemoMode / activeContext / pattern 匹配完成 |
 | IPCServer (WebSocket) | ✅ | handshake / state_changed / pattern_cache_sync / toggle_demo_mode |
-| HotkeyManager (基本) | 🔶 | `⌃⌥⌘D` toggle demo mode 完成；其餘快捷鍵尚未實作 |
+| HotkeyManager | ✅ | `⌃⌥⌘D` toggle、`⌃⌥Space` hold 偵測、`⌃⌥[1-9]` paste、flagsChanged 監聽 |
+| Floating Toolbox (HUD) | ✅ | NSPanel 浮動視窗、hold-to-search、Scheme B 鎖定、↑↓ 導航 |
+| ToolboxState (ViewModel) | ✅ | 搜尋過濾、選取狀態、release/confirm/dismiss 邏輯 |
+| FloatingToolboxController | ✅ | NSPanel 管理、游標定位、鎖定模式 makeKey |
 | Menu Bar App | ✅ | 原生選單樣式、Demo Mode toggle、Settings 視窗 |
 | SettingsWindowController | ✅ | 獨立 NSWindow，從 menu bar app 正常開啟 |
 | Settings UI | 🔶 | 基本 Tab 框架，Key 管理 + Add Service 完成 |
@@ -29,10 +32,6 @@
 
 | 功能 | 對應 Spec 章節 | 優先順序 |
 |------|--------------|---------|
-| Floating Toolbox (HUD) | Spec §4.3 | 高 |
-| Hold-to-search + Scheme B 鎖定 | Spec §4.3 | 高 |
-| `⌃⌥Space` 顯示/隱藏工具箱 | Spec §4.4 | 高 |
-| `⌃⌥[1-9]` 快捷鍵 paste | Spec §4.4 | 高 |
 | `⌃⌥⌘V` capture clipboard | Spec §4.4 | 中 |
 | Smart Key Extraction | Spec §6 | 中 |
 | Linked Key Groups (sequential paste) | Spec §6.3 | 中 |
@@ -57,6 +56,10 @@
 
 - Decoration 文字擠壓：原文隱藏用 `opacity: '0'` + `letterSpacing: '-1em'`，遮蔽文字 pad 至原始長度
 - Gutter icon 不存在：已移除引用
+
+### 已知注意事項
+
+- **Keychain ACL**：透過 `security` CLI 手動加入的 Keychain 項目，DemoSafe app 讀取時會跳出系統授權提示。必須透過 `SecItemAdd` API（即 `KeychainService.storeKey` 或同等 Swift 程式碼）加入，ACL 才會自動授權 DemoSafe 存取。
 
 ---
 
@@ -103,10 +106,10 @@
 4. ~~MaskingCoordinator~~ ✅
 5. ~~Menu Bar UI~~ ✅
 
-### Phase 2: 剪貼簿 + 快捷鍵 🔶
+### Phase 2: 剪貼簿 + 快捷鍵 ✅
 6. ~~ClipboardEngine~~ ✅
-7. ~~HotkeyManager (基本)~~ ✅
-8. Floating Toolbox HUD ❌
+7. ~~HotkeyManager（hold 偵測 + flagsChanged + 字元轉發）~~ ✅
+8. ~~Floating Toolbox HUD（NSPanel + hold-to-search + Scheme B 鎖定 + `⌃⌥[1-9]` paste）~~ ✅
 
 ### Phase 3: IPC + VS Code Extension ✅
 9. ~~IPCServer~~ ✅

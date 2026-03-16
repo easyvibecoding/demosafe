@@ -18,6 +18,8 @@ final class AppState: ObservableObject {
     let maskingCoordinator: MaskingCoordinator
     let hotkeyManager: HotkeyManager
     let ipcServer: IPCServer
+    let toolboxState: ToolboxState
+    let toolboxController: FloatingToolboxController
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -28,6 +30,8 @@ final class AppState: ObservableObject {
         self.clipboardEngine = ClipboardEngine(keychainService: keychainService, maskingCoordinator: maskingCoordinator)
         self.ipcServer = IPCServer(maskingCoordinator: maskingCoordinator, clipboardEngine: clipboardEngine)
         self.hotkeyManager = HotkeyManager(maskingCoordinator: maskingCoordinator)
+        self.toolboxState = ToolboxState(vaultManager: vaultManager)
+        self.toolboxController = FloatingToolboxController()
 
         // Sync isDemoMode bidirectionally with MaskingCoordinator
         maskingCoordinator.$isDemoMode
@@ -48,6 +52,12 @@ final class AppState: ObservableObject {
 
         // Wire settings window controller
         SettingsWindowController.shared.setAppState(self)
+
+        // Wire floating toolbox controller
+        toolboxController.setAppState(self, toolboxState: toolboxState)
+
+        // Wire hotkey callbacks
+        wireHotkeyCallbacks()
 
         // Start IPC Server
         do {
@@ -78,7 +88,6 @@ final class AppState: ObservableObject {
             activeContext = vaultManager.activeContext()
             maskingCoordinator.activeContext = activeContext
 
-            // Update clipboard auto-clear based on context
             if let seconds = activeContext?.clipboardClearSeconds {
                 clipboardEngine.startAutoClear(seconds: seconds)
             }
@@ -93,9 +102,85 @@ final class AppState: ObservableObject {
         do {
             let autoClear = activeContext?.clipboardClearSeconds
             try clipboardEngine.copyToClipboard(keyId: keyId, autoClearSeconds: autoClear)
-            logger.warning("Key copied successfully: \(keyId.uuidString)")
+            logger.info("Key copied: \(keyId.uuidString)")
         } catch {
             logger.error("Copy key failed: \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Private — Hotkey Wiring
+
+    private func wireHotkeyCallbacks() {
+        // Toolbox show (hold start)
+        hotkeyManager.onToolboxShow = { [weak self] in
+            guard let self else { return }
+            self.toolboxState.reset()
+            self.toolboxState.isVisible = true
+            let mouseLocation = NSEvent.mouseLocation
+            self.toolboxController.show(near: mouseLocation)
+        }
+
+        // Toolbox release (hold end)
+        hotkeyManager.onToolboxRelease = { [weak self] in
+            guard let self else { return }
+            self.toolboxState.handleRelease { [weak self] keyId in
+                self?.copyKey(keyId: keyId)
+            }
+            if self.toolboxState.isLocked {
+                self.hotkeyManager.isToolboxLocked = true
+                self.toolboxController.makeKeyIfNeeded()
+            } else {
+                self.toolboxController.dismiss()
+                self.hotkeyManager.isToolboxLocked = false
+            }
+        }
+
+        // Toolbox keystroke (typing during hold)
+        hotkeyManager.onToolboxKeystroke = { [weak self] char in
+            guard let self else { return }
+            if char == "\u{7f}" { // backspace
+                if !self.toolboxState.searchText.isEmpty {
+                    self.toolboxState.searchText.removeLast()
+                }
+            } else {
+                self.toolboxState.searchText.append(char)
+            }
+        }
+
+        // Locked mode — arrow navigation
+        hotkeyManager.onToolboxArrow = { [weak self] delta in
+            self?.toolboxState.moveSelection(delta: delta)
+        }
+
+        // Locked mode — Enter confirm
+        hotkeyManager.onToolboxConfirm = { [weak self] in
+            guard let self else { return }
+            self.toolboxState.handleConfirm { [weak self] keyId in
+                self?.copyKey(keyId: keyId)
+            }
+            self.toolboxController.dismiss()
+            self.hotkeyManager.isToolboxLocked = false
+        }
+
+        // Toolbox dismiss (Esc)
+        hotkeyManager.onToolboxDismiss = { [weak self] in
+            guard let self else { return }
+            self.toolboxState.dismiss()
+            self.toolboxController.dismiss()
+            self.hotkeyManager.isToolboxLocked = false
+        }
+
+        // Toggle demo mode
+        hotkeyManager.onToggleDemoMode = { [weak self] in
+            self?.toggleDemoMode()
+        }
+
+        // Paste key by index
+        hotkeyManager.onPasteKeyByIndex = { [weak self] index in
+            guard let self else { return }
+            let allKeys = self.vaultManager.getAllKeys()
+            guard index >= 1, index <= allKeys.count else { return }
+            self.copyKey(keyId: allKeys[index - 1].id)
         }
     }
 

@@ -77,6 +77,9 @@ These are absolute rules — never violate them:
 - **NWProtocolWebSocket**: `isComplete` in `receiveMessage` means per-message, NOT per-connection. Only close on error or `.close` opcode.
 - **VS Code Decoration**: Hide original text with `opacity: '0'` + `letterSpacing: '-1em'`; show masked text via `after` pseudo-element padded to original length.
 - **Chrome Content Script**: Must request `get_state` from background on load to get current Demo Mode state.
+- **Floating Toolbox**: Uses `NSPanel` (not NSWindow) with `.nonactivatingPanel` + `.floating` level. Does NOT call `setActivationPolicy(.regular)` — HUD must not show dock icon.
+- **HotkeyManager hold detection**: Must listen for `flagsChanged` events (not just keyDown/keyUp) to detect modifier key release. `CGEventType.flagsChanged` is the only way to detect ⌃/⌥ release.
+- **Keychain ACL**: Test keys must be added via `SecItemAdd` (Swift), NOT `security` CLI. CLI-added items trigger system permission prompts because ACL doesn't include the app.
 
 ## Documentation
 
