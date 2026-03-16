@@ -79,7 +79,7 @@ These are absolute rules — never violate them:
 - **Chrome Content Script**: Must request `get_state` from background on load to get current Demo Mode state.
 - **Floating Toolbox**: Uses `NSPanel` (not NSWindow) with `.nonactivatingPanel` + `.floating` level. Does NOT call `setActivationPolicy(.regular)` — HUD must not show dock icon.
 - **HotkeyManager hold detection**: Must listen for `flagsChanged` events (not just keyDown/keyUp) to detect modifier key release. `CGEventType.flagsChanged` is the only way to detect ⌃/⌥ release.
-- **Keychain ACL**: Test keys must be added via `SecItemAdd` (Swift), NOT `security` CLI. CLI-added items trigger system permission prompts because ACL doesn't include the app.
+- **Keychain ACL**: Test keys must be added by DemoSafe itself (via `VaultManager.addKey`), NOT by external tools (`security` CLI or separate Swift scripts). Keychain ACL is bound to the creating binary's code signature — every recompile invalidates externally-created entries. DEBUG builds auto-seed test keys via `seedTestKeysIfNeeded()` in AppState.
 
 ## Documentation
 
