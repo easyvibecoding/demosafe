@@ -10,7 +10,12 @@
  * 5. Active Capture: three-layer detection (DOM scan + attribute scan + clipboard intercept)
  */
 
-import { matchAgainstCapturePatterns, type CaptureMatch } from './capture-patterns';
+import {
+    matchAgainstCapturePatterns,
+    getPlatformSelectors,
+    getWatchSelectors,
+    type CaptureMatch,
+} from './capture-patterns';
 
 interface PatternEntry {
     keyId: string;
@@ -266,11 +271,13 @@ function handleCaptureModeChanged(isActive: boolean, timeout: number) {
         submittedKeys.clear();
         startCaptureTimeout(timeout);
         startClipboardInterceptor();
+        startPlatformWatcher();
         // Immediately scan current page
         scanForNewKeys();
     } else {
         stopCaptureTimeout();
         stopClipboardInterceptor();
+        stopPlatformWatcher();
         submittedKeys.clear();
     }
 }
@@ -367,9 +374,138 @@ function scanForNewKeys() {
         }
     }
 
+    // Layer 4: Platform-specific selectors
+    scanPlatformSpecific(hostname, allMatches);
+
     // Submit unique matches
     for (const match of allMatches) {
         submitCapturedKey(match);
+    }
+}
+
+// MARK: - Active Capture: Platform-Specific Scanning
+
+function scanPlatformSpecific(hostname: string, allMatches: CaptureMatch[]) {
+    const platformEntries = getPlatformSelectors(hostname);
+    if (platformEntries.length === 0) return;
+
+    for (const { pattern, selector: ps } of platformEntries) {
+        for (const cssSelector of ps.selectors) {
+            let elements: NodeListOf<Element>;
+            try {
+                elements = document.querySelectorAll(cssSelector);
+            } catch {
+                continue; // Invalid selector — skip
+            }
+
+            for (const el of elements) {
+                const textsToCheck: string[] = [];
+
+                // Read specified attributes (e.g., value for input, clipboard-copy)
+                if (ps.attributes) {
+                    for (const attr of ps.attributes) {
+                        const val = (el as HTMLInputElement).value ?? el.getAttribute(attr);
+                        if (val) textsToCheck.push(val);
+                    }
+                }
+
+                // Always also check textContent
+                const tc = el.textContent?.trim();
+                if (tc) textsToCheck.push(tc);
+
+                for (const text of textsToCheck) {
+                    if (!text || text.length < 10) continue;
+                    // Skip truncated (e.g., "sk-...xxxx", "hf_...DGlI")
+                    if (text.includes('...') && text.length < pattern.minLength) continue;
+
+                    const matches = matchAgainstCapturePatterns(text, hostname);
+                    for (const m of matches) {
+                        if (m.patternId === pattern.id) {
+                            m.captureMethod = 'platform_selector';
+                            // Boost confidence for platform-specific match
+                            m.confidence = Math.min(1.0, m.confidence + 0.03);
+                            allMatches.push(m);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Active Capture: Platform Modal Watcher
+
+let platformWatcher: MutationObserver | null = null;
+
+function startPlatformWatcher() {
+    if (platformWatcher) return;
+
+    const hostname = window.location.hostname;
+    const watchSelectors = getWatchSelectors(hostname);
+    if (watchSelectors.length === 0) return;
+
+    platformWatcher = new MutationObserver((mutations) => {
+        if (!isCaptureMode) return;
+
+        for (const mutation of mutations) {
+            if (mutation.type !== 'childList') continue;
+
+            for (const node of mutation.addedNodes) {
+                if (node.nodeType !== Node.ELEMENT_NODE) continue;
+                const el = node as Element;
+
+                // Check if added element matches any watch selector
+                const isRelevant = watchSelectors.some(sel => {
+                    try {
+                        return el.matches(sel) || el.querySelector(sel);
+                    } catch {
+                        return false;
+                    }
+                });
+
+                if (isRelevant) {
+                    // Modal/dialog appeared — scan immediately for keys
+                    setTimeout(() => {
+                        if (isCaptureMode) scanForNewKeys();
+                    }, 200); // Small delay for DOM to settle
+                    return;
+                }
+            }
+
+            // Also check for attribute changes on watch selectors (e.g., data-state="open")
+            if (mutation.type === 'childList') {
+                for (const sel of watchSelectors) {
+                    try {
+                        const openElements = document.querySelectorAll(sel);
+                        for (const oel of openElements) {
+                            if (oel.getAttribute('data-state') === 'open' ||
+                                (oel as HTMLElement).offsetParent !== null) {
+                                setTimeout(() => {
+                                    if (isCaptureMode) scanForNewKeys();
+                                }, 200);
+                                return;
+                            }
+                        }
+                    } catch {
+                        // Invalid selector
+                    }
+                }
+            }
+        }
+    });
+
+    platformWatcher.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['data-state', 'class', 'style'],
+    });
+}
+
+function stopPlatformWatcher() {
+    if (platformWatcher) {
+        platformWatcher.disconnect();
+        platformWatcher = null;
     }
 }
 
