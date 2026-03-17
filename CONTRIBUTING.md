@@ -18,6 +18,19 @@ Thank you for your interest in contributing! This guide will help you get starte
 5. Commit with a descriptive message (see Commit Convention below)
 6. Push and open a Pull Request
 
+## Adding Platform Support
+
+DemoSafe's Chrome Extension detects and masks API keys on supported platforms. The API key ecosystem is vast — we can't cover every platform alone and welcome community contributions.
+
+**Adding a new platform requires only two changes:**
+
+1. Add one entry to [`capture-patterns.ts`](packages/chrome-extension/src/content-scripts/capture-patterns.ts) with the key format, CSS selectors, and capture strategy
+2. Add the platform URL to [`manifest.json`](packages/chrome-extension/manifest.json)
+
+See [Supported Platforms](docs/en/13-supported-platforms.md) for the full list, contribution guide, and platform-specific quirks to be aware of.
+
+You can also **open an Issue** describing the platform, key format, and key display URL — we or other contributors can help build the pattern entry.
+
 ## Commit Convention
 
 We follow [Conventional Commits](https://www.conventionalcommits.org/):

@@ -218,7 +218,7 @@ function scanAndMask() {
 
     // If auto-capture is active, submit matched values BEFORE masking replaces them
     if (shouldAutoCapture()) {
-        for (const { match, entry } of nodesToMask) {
+        for (const { match } of nodesToMask) {
             const rawValue = match[0].trim();
             if (rawValue.length >= 20 && !rawValue.includes('****') && !submittedKeys.has(rawValue)) {
                 const hostname = window.location.hostname;
@@ -877,46 +877,6 @@ function immediatelyMaskValue(rawValue: string, serviceName: string, maskedPrevi
 }
 
 // MARK: - Toast Notification
-
-/**
- * Find the topmost visible container for toast injection.
- * If a modal/dialog is open, returns it so toast renders above the backdrop.
- * Otherwise returns document.body.
- */
-function findTopmostContainer(): Element {
-    // Check for open dialogs (native <dialog> or role="dialog")
-    const dialogs = document.querySelectorAll('dialog[open], [role="dialog"], [data-state="open"], [class*="modal"]');
-    let topmost: Element | null = null;
-    let topZ = -1;
-
-    for (const el of dialogs) {
-        const style = window.getComputedStyle(el);
-        if (style.display === 'none' || style.visibility === 'hidden') continue;
-        if ((el as HTMLElement).offsetParent === null && style.position !== 'fixed') continue;
-
-        const z = parseInt(style.zIndex) || 0;
-        if (z >= topZ) {
-            topZ = z;
-            topmost = el;
-        }
-    }
-
-    // Also check for overlay/backdrop containers with high z-index
-    if (!topmost) {
-        document.querySelectorAll('div[style*="z-index"], div[class*="overlay"], div[class*="backdrop"]').forEach(el => {
-            const style = window.getComputedStyle(el);
-            const z = parseInt(style.zIndex) || 0;
-            if (z > 1000 && style.position === 'fixed' && (el as HTMLElement).offsetParent !== null) {
-                if (z >= topZ) {
-                    topZ = z;
-                    topmost = el;
-                }
-            }
-        });
-    }
-
-    return topmost || document.body;
-}
 
 function showToast(serviceName: string, preview: string) {
     // Stack toasts: calculate offset based on existing toasts
