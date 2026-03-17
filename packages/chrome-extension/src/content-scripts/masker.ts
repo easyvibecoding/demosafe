@@ -692,7 +692,7 @@ function handleClipboardText(text: string) {
         if (awsSecretPattern.test(text.trim()) &&
             !text.startsWith('AKIA') && !text.startsWith('ASIA')) {
             submitCapturedKey({
-                rawValue: trimmed,
+                rawValue: text.trim(),
                 serviceName: 'AWS',
                 patternId: 'aws-secret-key',
                 confidence: 0.85,
@@ -919,15 +919,20 @@ function findTopmostContainer(): Element {
 }
 
 function showToast(serviceName: string, preview: string) {
-    const existing = document.querySelector('.demosafe-toast');
-    if (existing) existing.remove();
+    // Stack toasts: calculate offset based on existing toasts
+    const existingToasts = document.querySelectorAll('.demosafe-toast');
+    let topOffset = 16;
+    existingToasts.forEach(el => {
+        const rect = (el as HTMLElement).getBoundingClientRect();
+        const bottom = rect.top + rect.height + 8; // 8px gap between toasts
+        if (bottom > topOffset) topOffset = bottom;
+    });
 
     const toast = document.createElement('div');
-    // Use inline styles to guarantee visibility above any modal/overlay
     toast.className = 'demosafe-toast';
     toast.style.cssText = `
         position: fixed !important;
-        top: 16px !important;
+        top: ${topOffset}px !important;
         right: 16px !important;
         z-index: 2147483647 !important;
         background: #1a1a2e !important;
@@ -947,8 +952,6 @@ function showToast(serviceName: string, preview: string) {
         `<span style="color:#f59e0b;font-weight:600">${serviceName}</span> ` +
         `key captured: <code>${preview}</code>`;
 
-    // Always inject into document.body for maximum visibility.
-    // Fixed positioning + max z-index ensures it's above all overlays.
     document.body.appendChild(toast);
 
     requestAnimationFrame(() => {
