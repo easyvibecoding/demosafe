@@ -137,7 +137,7 @@ export const CAPTURE_PATTERNS: CapturePattern[] = [
         confidence: 0.85,
         minLength: 20,
     },
-    // Google Cloud API Key
+    // Google Cloud API Key (covers Cloud Console + AI Studio)
     {
         id: 'google-cloud',
         serviceName: 'Google Cloud',
@@ -145,17 +145,30 @@ export const CAPTURE_PATTERNS: CapturePattern[] = [
         regex: /AIzaSy[A-Za-z0-9_-]{33}/g,
         confidence: 0.95,
         minLength: 39,
-        preHideCSS: `services-show-api-key-string, mat-dialog-container input, mat-dialog-container code { visibility: hidden !important; }`,
-        platformSelectors: [{
-            hostname: 'console.cloud.google.com',
-            selectors: [
-                'services-show-api-key-string',
-                'mat-dialog-container input',
-                'mat-dialog-container code',
-            ],
-            watchSelector: 'mat-dialog-container',
-            strategy: 'reveal_toggle',
-        }],
+        preHideCSS: `services-show-api-key-string, ms-api-key-key-string, .api-key, mat-dialog-container input, mat-dialog-container code { visibility: hidden !important; }`,
+        platformSelectors: [
+            {
+                hostname: 'console.cloud.google.com',
+                selectors: [
+                    'services-show-api-key-string',
+                    'mat-dialog-container input',
+                    'mat-dialog-container code',
+                ],
+                watchSelector: 'mat-dialog-container',
+                strategy: 'reveal_toggle',
+            },
+            {
+                hostname: 'aistudio.google.com',
+                selectors: [
+                    'ms-api-key-key-string',   // AI Studio custom element
+                    '.api-key',                 // Key container div
+                    'mat-dialog-container input',
+                    'mat-dialog-container code',
+                ],
+                watchSelector: 'mat-dialog-container, ms-api-key-key-string',
+                strategy: 'reveal_toggle',
+            },
+        ],
     },
     // Stripe Secret Key (live + test)
     {
@@ -363,6 +376,7 @@ export const DOMAIN_SERVICE_MAP: Record<string, string[]> = {
     'platform.claude.com': ['anthropic'],
     'github.com': ['github-classic', 'github-fine-grained', 'github-oauth'],
     'console.cloud.google.com': ['google-cloud'],
+    'aistudio.google.com': ['google-cloud'],
     'huggingface.co': ['huggingface'],
     'dashboard.stripe.com': ['stripe-secret', 'stripe-publishable', 'stripe-restricted'],
     'console.aws.amazon.com': ['aws-access-key', 'aws-temp-key'],

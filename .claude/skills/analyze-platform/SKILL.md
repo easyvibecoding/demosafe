@@ -20,6 +20,7 @@ Platform shortcuts (case-insensitive):
 | anthropic | https://platform.claude.com/settings/keys |
 | github | https://github.com/settings/tokens |
 | google-cloud | https://console.cloud.google.com/apis/credentials |
+| gemini / ai-studio | https://aistudio.google.com/apikey |
 | stripe | https://dashboard.stripe.com/apikeys |
 | aws | https://console.aws.amazon.com/iam/home#/security_credentials |
 | huggingface | https://huggingface.co/settings/tokens |
