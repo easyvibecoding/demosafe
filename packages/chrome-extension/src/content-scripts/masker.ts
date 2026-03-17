@@ -14,6 +14,7 @@ import {
     matchAgainstCapturePatterns,
     getPlatformSelectors,
     getWatchSelectors,
+    getPreHideCSS,
     DOMAIN_SERVICE_MAP,
     type CaptureMatch,
 } from './capture-patterns';
@@ -318,30 +319,18 @@ function removePreHide() {
         el.removeAttribute('data-demosafe-prehidden');
     });
 
-    // Override manifest-injected CSS (can't be removed, but can be overridden)
-    // When Demo Mode is OFF, all pre-hidden elements should be visible
+    // Override manifest-injected CSS for current platform.
+    // Manifest CSS can't be removed by JS, so inject higher-priority visible rules.
     if (!document.getElementById('demosafe-prehide-override')) {
-        const override = document.createElement('style');
-        override.id = 'demosafe-prehide-override';
-        override.textContent = `
-            /* Override manifest CSS pre-hide when Demo Mode is OFF */
-            code#new-oauth-token, code.token, .flash code, clipboard-copy[value],
-            [data-state="open"] input[type="text"], [data-state="open"] code,
-            td.api-key-token .api-key-token-value,
-            [role="dialog"] .bg-accent-900, [role="dialog"] .bg-accent-900 *,
-            [role="dialog"] .font-mono,
-            [class*="awsui_input"] input[readonly],
-            services-show-api-key-string, ms-api-key-key-string, .api-key,
-            mat-dialog-container input, mat-dialog-container code,
-            input[type="text"][readonly],
-            .token-value code, input[readonly], input.font-mono, input.truncate,
-            input[type="text"].token_display, .token_display code,
-            [class*="api-key"] input, [class*="api-key"] code,
-            input#created-personal-access-token, .flash-notice code {
-                visibility: visible !important;
-            }
-        `;
-        document.head.appendChild(override);
+        const hostname = window.location.hostname;
+        const css = getPreHideCSS(hostname);
+        if (css) {
+            const override = document.createElement('style');
+            override.id = 'demosafe-prehide-override';
+            // Replace "visibility: hidden" with "visibility: visible" in the same selectors
+            override.textContent = css.replace(/visibility:\s*hidden\s*!important/g, 'visibility: visible !important');
+            document.head.appendChild(override);
+        }
     }
 }
 
@@ -660,18 +649,19 @@ function startClipboardInterceptor() {
     if (clipboardInterceptorActive) return;
     clipboardInterceptorActive = true;
     document.addEventListener('copy', handleCopyEvent, true);
+    patchClipboardWriteText();
 }
 
 function stopClipboardInterceptor() {
     if (!clipboardInterceptorActive) return;
     clipboardInterceptorActive = false;
     document.removeEventListener('copy', handleCopyEvent, true);
+    restoreClipboardWriteText();
 }
 
 function handleCopyEvent() {
-    if (!isCaptureMode) return;
+    if (!shouldAutoCapture()) return;
 
-    // Read clipboard after a short delay (copy event fires before clipboard is populated)
     setTimeout(() => {
         navigator.clipboard.readText().then((text) => {
             if (!text || text.length < 10) return;
@@ -681,10 +671,34 @@ function handleCopyEvent() {
                 match.captureMethod = 'clipboard_intercept';
                 submitCapturedKey(match);
             }
-        }).catch(() => {
-            // Clipboard read permission denied — ignore
-        });
+        }).catch(() => {});
     }, 100);
+}
+
+// Listen for clipboard writeText events from clipboard-patch.ts (MAIN world)
+let clipboardListenerActive = false;
+
+function patchClipboardWriteText() {
+    if (clipboardListenerActive) return;
+    clipboardListenerActive = true;
+
+    window.addEventListener('demosafe-clipboard-write', () => {
+        setTimeout(() => {
+            navigator.clipboard.readText().then((text) => {
+                if (!text || text.length < 10 || !shouldAutoCapture()) return;
+                const hostname = window.location.hostname;
+                const matches = matchAgainstCapturePatterns(text, hostname);
+                for (const match of matches) {
+                    match.captureMethod = 'clipboard_intercept';
+                    submitCapturedKey(match);
+                }
+            }).catch(() => {});
+        }, 150);
+    });
+}
+
+function restoreClipboardWriteText() {
+    // Listener stays but shouldAutoCapture() gates execution
 }
 
 // MARK: - Active Capture: Submission

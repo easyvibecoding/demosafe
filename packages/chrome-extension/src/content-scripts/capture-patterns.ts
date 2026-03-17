@@ -145,7 +145,7 @@ export const CAPTURE_PATTERNS: CapturePattern[] = [
         regex: /AIzaSy[A-Za-z0-9_-]{33}/g,
         confidence: 0.95,
         minLength: 39,
-        preHideCSS: `services-show-api-key-string, ms-api-key-key-string, .api-key, mat-dialog-container input, mat-dialog-container code { visibility: hidden !important; }`,
+        preHideCSS: `services-show-api-key-string, mat-dialog-container ms-api-key-key-string, mat-dialog-container .api-key { visibility: hidden !important; }`,
         platformSelectors: [
             {
                 hostname: 'console.cloud.google.com',
@@ -338,7 +338,7 @@ export const CAPTURE_PATTERNS: CapturePattern[] = [
         regex: /SG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}/g,
         confidence: 0.95,
         minLength: 69,
-        preHideCSS: `[class*="api-key"] input, [class*="api-key"] code { visibility: hidden !important; }`,
+        preHideCSS: `[class*="api-key-value"] input, [class*="api-key-value"] code { visibility: hidden !important; }`,
         platformSelectors: [{
             hostname: 'app.sendgrid.com',
             selectors: ['input[type="text"]', 'code', '[class*="api-key"]'],
