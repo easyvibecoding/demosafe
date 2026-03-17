@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html><head><title>Capture Test</title></head>
+<body style="font-family: sans-serif; max-width: 600px; margin: 40px auto;">
+<h1>Active Capture Test Page</h1>
+<p>These are fake API keys for testing capture mode:</p>
+<div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin: 12px 0;">
+  <strong>OpenAI:</strong><br>
+  <code>sk-proj-abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890abcdefghij</code>
+</div>
+<div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin: 12px 0;">
+  <strong>GitHub PAT:</strong><br>
+  <code>ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef1234</code>
+</div>
+<div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin: 12px 0;">
+  <strong>Anthropic:</strong><br>
+  <code>sk-ant-api03-abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890abcdefghij</code>
+</div>
+<div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin: 12px 0;">
+  <strong>Stripe:</strong><br>
+  <code>sk_test_FAKE00KEY00FOR00TESTING001234</code>
+</div>
+<div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin: 12px 0;">
+  <strong>Hidden input:</strong><br>
+  <input type="password" value="hf_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij" style="width: 100%;">
+</div>
+<button onclick="addDynamicKey()">Simulate: Add key dynamically</button>
+<div id="dynamic"></div>
+<script>
+function addDynamicKey() {
+  var div = document.createElement('div');
+  div.style = 'background: #fff3cd; padding: 16px; border-radius: 8px; margin: 12px 0;';
+  div.innerHTML = '<strong>New Google Cloud key:</strong><br><code>AIzaSyB1234567890abcdefghijklmnopqrstuvw</code>';
+  document.getElementById('dynamic').appendChild(div);
+}
+</script>
+</body></html>

@@ -7,7 +7,8 @@
     "activeTab",
     "storage",
     "nativeMessaging",
-    "tabs"
+    "tabs",
+    "alarms"
   ],
   "background": {
     "service_worker": "dist/background/service-worker.js",
@@ -15,20 +16,114 @@
   },
   "content_scripts": [
     {
+      "matches": ["https://platform.openai.com/*"],
+      "css": ["dist/css/prehide-platform-openai-com.css"],
+      "js": ["dist/content-scripts/pre-hide.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://console.anthropic.com/*"],
+      "css": ["dist/css/prehide-console-anthropic-com.css"],
+      "js": ["dist/content-scripts/pre-hide.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://platform.claude.com/*"],
+      "css": ["dist/css/prehide-platform-claude-com.css"],
+      "js": ["dist/content-scripts/pre-hide.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://console.aws.amazon.com/*", "https://*.console.aws.amazon.com/*"],
+      "css": ["dist/css/prehide-console-aws-amazon-com.css"],
+      "js": ["dist/content-scripts/pre-hide.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://dashboard.stripe.com/*"],
+      "css": ["dist/css/prehide-dashboard-stripe-com.css"],
+      "js": ["dist/content-scripts/pre-hide.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://console.cloud.google.com/*"],
+      "css": ["dist/css/prehide-console-cloud-google-com.css"],
+      "js": ["dist/content-scripts/pre-hide.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://aistudio.google.com/*"],
+      "css": ["dist/css/prehide-aistudio-google-com.css"],
+      "js": ["dist/content-scripts/pre-hide.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://portal.azure.com/*"],
+      "js": ["dist/content-scripts/pre-hide.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://github.com/settings/tokens*", "https://github.com/settings/personal-access-tokens*"],
+      "css": ["dist/css/prehide-github-com.css"],
+      "js": ["dist/content-scripts/pre-hide.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://huggingface.co/settings/tokens*"],
+      "css": ["dist/css/prehide-huggingface-co.css"],
+      "js": ["dist/content-scripts/pre-hide.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://app.sendgrid.com/*"],
+      "css": ["dist/css/prehide-app-sendgrid-com.css"],
+      "js": ["dist/content-scripts/pre-hide.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://api.slack.com/*"],
+      "css": ["dist/css/prehide-api-slack-com.css"],
+      "js": ["dist/content-scripts/pre-hide.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://gitlab.com/-/user_settings/personal_access_tokens*"],
+      "css": ["dist/css/prehide-gitlab-com.css"],
+      "js": ["dist/content-scripts/pre-hide.js"],
+      "run_at": "document_start"
+    },
+    {
       "matches": [
         "https://platform.openai.com/*",
         "https://console.anthropic.com/*",
+        "https://platform.claude.com/*",
         "https://console.aws.amazon.com/*",
+        "https://*.console.aws.amazon.com/*",
         "https://dashboard.stripe.com/*",
         "https://console.cloud.google.com/*",
+        "https://aistudio.google.com/*",
         "https://portal.azure.com/*",
         "https://github.com/settings/tokens*",
+        "https://github.com/settings/personal-access-tokens*",
         "https://huggingface.co/settings/tokens*",
         "https://app.sendgrid.com/*",
-        "https://api.slack.com/*"
+        "https://api.slack.com/*",
+        "https://gitlab.com/-/user_settings/personal_access_tokens*"
       ],
       "js": ["dist/content-scripts/masker.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://aistudio.google.com/*",
+        "https://console.cloud.google.com/*",
+        "https://dashboard.stripe.com/*",
+        "https://console.aws.amazon.com/*",
+        "https://*.console.aws.amazon.com/*"
+      ],
+      "js": ["dist/content-scripts/clipboard-patch.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
     }
   ],
   "action": {

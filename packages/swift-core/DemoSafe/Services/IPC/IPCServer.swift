@@ -1,11 +1,15 @@
 import Foundation
 import Network
+import os
+
+private let ipcLogger = Logger(subsystem: "com.demosafe", category: "IPCServer")
 
 /// Localhost WebSocket server for extension communication.
 /// Binds ONLY to 127.0.0.1 — external interfaces are forbidden (security red line).
 final class IPCServer {
     private let maskingCoordinator: MaskingCoordinator
     private let clipboardEngine: ClipboardEngine
+    private let vaultManager: VaultManager
     private var listener: NWListener?
     private var connections: [UUID: ClientConnection] = [:]
     private var handshakeToken: String = ""
@@ -30,9 +34,10 @@ final class IPCServer {
         let clientType: ClientType
     }
 
-    init(maskingCoordinator: MaskingCoordinator, clipboardEngine: ClipboardEngine) {
+    init(maskingCoordinator: MaskingCoordinator, clipboardEngine: ClipboardEngine, vaultManager: VaultManager) {
         self.maskingCoordinator = maskingCoordinator
         self.clipboardEngine = clipboardEngine
+        self.vaultManager = vaultManager
         let home = FileManager.default.homeDirectoryForCurrentUser
         self.ipcDir = home.appendingPathComponent(".demosafe")
         self.ipcFileURL = ipcDir.appendingPathComponent("ipc.json")
@@ -203,8 +208,10 @@ final class IPCServer {
               let action = json["action"] as? String,
               let messageId = json["id"] as? String,
               let payload = json["payload"] as? [String: Any] else {
+            ipcLogger.warning("Failed to parse message")
             return
         }
+        ipcLogger.warning("handleMessage: action=\(action) authenticated=\(self.connections[clientId]?.isAuthenticated ?? false)")
 
         switch action {
         case "handshake":
@@ -217,6 +224,10 @@ final class IPCServer {
             handleToggleDemoMode(messageId: messageId, clientId: clientId)
         case "submit_detected":
             handleSubmitDetected(messageId: messageId, payload: payload, clientId: clientId)
+        case "submit_captured_key":
+            handleSubmitCapturedKey(messageId: messageId, payload: payload, clientId: clientId)
+        case "toggle_capture_mode":
+            handleToggleCaptureMode(messageId: messageId, payload: payload, clientId: clientId)
         default:
             sendError(messageId: messageId, action: action, code: "INVALID_PAYLOAD", message: "Unknown action: \(action)", clientId: clientId)
         }
@@ -353,6 +364,135 @@ final class IPCServer {
             "type": "response",
             "action": "submit_detected",
             "payload": ["isStored": false],
+            "timestamp": ISO8601DateFormatter().string(from: Date()),
+        ]
+        sendJSON(response, clientId: clientId)
+    }
+
+    private func handleSubmitCapturedKey(messageId: String, payload: [String: Any], clientId: UUID) {
+        guard connections[clientId]?.isAuthenticated == true else {
+            sendError(messageId: messageId, action: "submit_captured_key", code: "AUTH_FAILED", message: "Not authenticated", clientId: clientId)
+            return
+        }
+
+        guard let rawValue = payload["rawValue"] as? String,
+              let suggestedService = payload["suggestedService"] as? String else {
+            sendError(messageId: messageId, action: "submit_captured_key", code: "INVALID_PAYLOAD", message: "Missing rawValue or suggestedService", clientId: clientId)
+            return
+        }
+
+        let confidence = payload["confidence"] as? Double ?? 0.5
+        let sourceURL = payload["sourceURL"] as? String ?? ""
+
+        // Low confidence — require confirmation (respond but don't store yet)
+        if confidence < 0.7 {
+            let response: [String: Any] = [
+                "id": messageId,
+                "type": "response",
+                "action": "submit_captured_key",
+                "payload": [
+                    "status": "low_confidence",
+                    "requiresConfirmation": true,
+                    "suggestedService": suggestedService,
+                    "sourceURL": sourceURL,
+                ],
+                "timestamp": ISO8601DateFormatter().string(from: Date()),
+            ]
+            sendJSON(response, clientId: clientId)
+            return
+        }
+
+        // Find or create service
+        ipcLogger.warning("submit_captured_key: service=\(suggestedService) confidence=\(confidence) rawLen=\(rawValue.count)")
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { ipcLogger.error("self is nil in submit_captured_key"); return }
+
+            var service = self.vaultManager.getAllServices().first(where: { $0.name == suggestedService })
+            ipcLogger.warning("existing service: \(service?.name ?? "nil")")
+            if service == nil {
+                let defaultPattern = ".*" // Generic fallback pattern
+                let newService = Service(
+                    id: UUID(), name: suggestedService, icon: nil,
+                    defaultPattern: defaultPattern, defaultMaskFormat: .default, isBuiltIn: false
+                )
+                try? self.vaultManager.addService(newService)
+                service = newService
+            }
+
+            guard let svc = service, let valueData = rawValue.data(using: .utf8) else {
+                self.sendError(messageId: messageId, action: "submit_captured_key", code: "STORE_FAILED", message: "Failed to encode value", clientId: clientId)
+                return
+            }
+
+            // Generate a simple label from service + timestamp
+            let label = "\(suggestedService.lowercased())-\(Int(Date().timeIntervalSince1970) % 100000)"
+
+            // Generate a regex pattern that matches this specific key
+            let escapedValue = NSRegularExpression.escapedPattern(for: rawValue)
+
+            do {
+                ipcLogger.warning("storing key: label=\(label) patternLen=\(escapedValue.count)")
+                _ = try self.vaultManager.addKey(
+                    label: label,
+                    serviceId: svc.id,
+                    pattern: escapedValue,
+                    maskFormat: svc.defaultMaskFormat,
+                    value: valueData
+                )
+                ipcLogger.warning("key stored successfully")
+
+                // pattern_cache_sync is automatically broadcast via NotificationCenter
+
+                let response: [String: Any] = [
+                    "id": messageId,
+                    "type": "response",
+                    "action": "submit_captured_key",
+                    "payload": [
+                        "status": "success",
+                        "label": label,
+                        "serviceName": suggestedService,
+                    ],
+                    "timestamp": ISO8601DateFormatter().string(from: Date()),
+                ]
+                self.sendJSON(response, clientId: clientId)
+            } catch {
+                ipcLogger.error("FAILED to store key: \(error)")
+                self.sendError(messageId: messageId, action: "submit_captured_key", code: "STORE_FAILED", message: "Failed to store key: \(error)", clientId: clientId)
+            }
+        }
+    }
+
+    private func handleToggleCaptureMode(messageId: String, payload: [String: Any], clientId: UUID) {
+        guard connections[clientId]?.isAuthenticated == true else {
+            sendError(messageId: messageId, action: "toggle_capture_mode", code: "AUTH_FAILED", message: "Not authenticated", clientId: clientId)
+            return
+        }
+
+        let isActive = payload["isActive"] as? Bool ?? false
+
+        // Broadcast to all connected clients
+        let event: [String: Any] = [
+            "id": UUID().uuidString,
+            "type": "event",
+            "action": "capture_mode_changed",
+            "payload": [
+                "isActive": isActive,
+                "timeout": 300,
+            ],
+            "timestamp": ISO8601DateFormatter().string(from: Date()),
+        ]
+
+        if let data = try? JSONSerialization.data(withJSONObject: event) {
+            for (_, client) in connections where client.isAuthenticated {
+                sendData(data, to: client.connection)
+            }
+        }
+
+        let response: [String: Any] = [
+            "id": messageId,
+            "type": "response",
+            "action": "toggle_capture_mode",
+            "payload": ["status": "success", "isActive": isActive],
             "timestamp": ISO8601DateFormatter().string(from: Date()),
         ]
         sendJSON(response, clientId: clientId)

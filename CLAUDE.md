@@ -80,6 +80,8 @@ These are absolute rules — never violate them:
 - **Floating Toolbox**: Uses `NSPanel` (not NSWindow) with `.nonactivatingPanel` + `.floating` level. Does NOT call `setActivationPolicy(.regular)` — HUD must not show dock icon.
 - **HotkeyManager hold detection**: Must listen for `flagsChanged` events (not just keyDown/keyUp) to detect modifier key release. `CGEventType.flagsChanged` is the only way to detect ⌃/⌥ release.
 - **Keychain ACL**: Test keys must be added by DemoSafe itself (via `VaultManager.addKey`), NOT by external tools (`security` CLI or separate Swift scripts). Keychain ACL is bound to the creating binary's code signature — every recompile invalidates externally-created entries. DEBUG builds auto-seed test keys via `seedTestKeysIfNeeded()` in AppState.
+- **Platform patterns Single Source of Truth**: All platform definitions (regex, selectors, pre-hide CSS) are in `capture-patterns.ts`. To add a new platform: add ONE entry to `CAPTURE_PATTERNS[]` + add URL to `manifest.json`. `pre-hide.ts` and `masker.ts` import from it — no duplication.
+- **Pre-hide anti-flash**: Two layers at `document_start`: CSS `visibility: hidden` from `preHideCSS` field + instant MutationObserver for dialogs. Passive masking runs capture-before-mask to avoid race condition.
 
 ## Documentation
 

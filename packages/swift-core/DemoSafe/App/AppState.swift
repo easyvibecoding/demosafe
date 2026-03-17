@@ -28,7 +28,7 @@ final class AppState: ObservableObject {
         self.vaultManager = VaultManager(keychainService: keychainService)
         self.maskingCoordinator = MaskingCoordinator(vaultManager: vaultManager)
         self.clipboardEngine = ClipboardEngine(keychainService: keychainService, maskingCoordinator: maskingCoordinator)
-        self.ipcServer = IPCServer(maskingCoordinator: maskingCoordinator, clipboardEngine: clipboardEngine)
+        self.ipcServer = IPCServer(maskingCoordinator: maskingCoordinator, clipboardEngine: clipboardEngine, vaultManager: vaultManager)
         self.hotkeyManager = HotkeyManager(maskingCoordinator: maskingCoordinator)
         self.toolboxState = ToolboxState(vaultManager: vaultManager)
         self.toolboxController = FloatingToolboxController()
@@ -219,8 +219,8 @@ final class AppState: ObservableObject {
     /// so Keychain ACL automatically matches the current binary.
     private func seedTestKeysIfNeeded() {
         let testKeys: [(label: String, serviceName: String, pattern: String, value: String)] = [
-            ("test-key-1", "OpenAI", "sk-[a-zA-Z0-9]+", "sk-proj-TestKey1234567890abcdef"),
-            ("openai-dev", "OpenAI", "sk-[a-zA-Z0-9]+", "sk-devTestKey9876543210"),
+            ("test-key-1", "OpenAI", "sk-proj-[a-zA-Z0-9_-]+", "sk-proj-TestKey1234567890abcdef"),
+            ("openai-dev", "OpenAI", "sk-proj-[a-zA-Z0-9_-]+", "sk-devTestKey9876543210"),
             ("anthropic-prod", "Anthropic", "sk-ant-[a-zA-Z0-9_-]+", "sk-ant-test1234567890abcdef"),
             ("aws-access-key", "AWS", "AKIA[0-9A-Z]{16}", "AKIAIOSFODNN7EXAMPLE1"),
             ("stripe-live", "Stripe", "sk_live_[a-zA-Z0-9]+", "sk_live_test1234567890abcdef"),
@@ -229,18 +229,11 @@ final class AppState: ObservableObject {
         let existingKeys = vaultManager.getAllKeys()
 
         for testKey in testKeys {
-            // Skip if key label already exists
-            if existingKeys.contains(where: { $0.label == testKey.label }) {
-                // Key exists in vault — ensure it's also in Keychain with correct ACL
-                if let existing = existingKeys.first(where: { $0.label == testKey.label }) {
-                    if (try? keychainService.retrieveKey(keyId: existing.id)) == nil {
-                        // Missing from Keychain — delete and re-add
-                        try? keychainService.deleteKey(keyId: existing.id)
-                        if let data = testKey.value.data(using: .utf8) {
-                            try? keychainService.storeKey(keyId: existing.id, value: data)
-                            logger.info("Re-seeded Keychain for \(testKey.label)")
-                        }
-                    }
+            // If key exists in vault, always refresh Keychain (ACL changes on rebuild)
+            if let existing = existingKeys.first(where: { $0.label == testKey.label }) {
+                try? keychainService.deleteKey(keyId: existing.id)
+                if let data = testKey.value.data(using: .utf8) {
+                    try? keychainService.storeKey(keyId: existing.id, value: data)
                 }
                 continue
             }
@@ -259,7 +252,7 @@ final class AppState: ObservableObject {
             guard let svc = service, let valueData = testKey.value.data(using: .utf8) else { continue }
 
             do {
-                try vaultManager.addKey(
+                _ = try vaultManager.addKey(
                     label: testKey.label,
                     serviceId: svc.id,
                     pattern: testKey.pattern,

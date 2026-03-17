@@ -50,8 +50,12 @@
     }
     .dot.connected { background: #22c55e; }
     .dot.offline { background: #ef4444; }
+    .dot.capture { background: #f59e0b; }
     .actions {
       padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
     .btn {
       display: block;
@@ -61,22 +65,40 @@
       border-radius: 6px;
       font-size: 13px;
       cursor: pointer;
-      text-align: left;
-      background: transparent;
+      text-align: center;
+      font-weight: 500;
       transition: background 0.15s;
     }
-    .btn:hover { background: #f5f5f5; }
     .btn-primary {
       background: #1a1a2e;
       color: white;
-      text-align: center;
-      font-weight: 500;
     }
     .btn-primary:hover { background: #2a2a4e; }
     .btn-primary.active {
       background: #e94560;
     }
     .btn-primary.active:hover { background: #d63850; }
+    .btn-capture {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #f59e0b;
+    }
+    .btn-capture:hover { background: #fde68a; }
+    .btn-capture.active {
+      background: #f59e0b;
+      color: white;
+      border-color: #d97706;
+      animation: pulse-capture 2s ease-in-out infinite;
+    }
+    .btn-capture.active:hover { background: #d97706; }
+    @keyframes pulse-capture {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.8; }
+    }
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
     .footer {
       padding: 8px 12px;
       border-top: 1px solid #e5e5e5;
@@ -112,10 +134,18 @@
       <span class="status-label">Patterns</span>
       <span class="status-value" id="patternCount">0</span>
     </div>
+    <div class="status-row" id="captureRow" style="display: none;">
+      <span class="status-label">Capture</span>
+      <span class="status-value">
+        <span class="dot capture" id="captureDot"></span>
+        <span id="captureText">Inactive</span>
+      </span>
+    </div>
   </div>
 
   <div class="actions">
-    <button class="btn btn-primary" id="toggleDemo">Toggle Demo Mode</button>
+    <button class="btn btn-primary" id="toggleDemo">Enter Demo Mode</button>
+    <button class="btn btn-capture" id="toggleCapture" style="display: none;">Start Capture</button>
   </div>
 
   <div class="footer">

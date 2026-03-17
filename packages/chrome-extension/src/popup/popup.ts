@@ -1,5 +1,5 @@
 /**
- * Popup script — displays connection status and provides quick actions.
+ * Popup script — displays connection status, demo mode, and capture mode controls.
  */
 
 interface DemoSafeState {
@@ -7,9 +7,15 @@ interface DemoSafeState {
     isDemoMode: boolean;
     activeContextName: string | null;
     patternCount: number;
+    isCaptureMode: boolean;
+    captureTimeoutEnd: number | null;
+    capturedCount: number;
 }
 
+let countdownInterval: ReturnType<typeof setInterval> | null = null;
+
 function updateUI(state: DemoSafeState) {
+
     const connectionDot = document.getElementById('connectionDot')!;
     const connectionText = document.getElementById('connectionText')!;
     const modeText = document.getElementById('modeText')!;
@@ -17,6 +23,10 @@ function updateUI(state: DemoSafeState) {
     const patternCount = document.getElementById('patternCount')!;
     const toggleBtn = document.getElementById('toggleDemo')!;
     const headerIcon = document.getElementById('headerIcon')!;
+    const captureRow = document.getElementById('captureRow')!;
+    const captureText = document.getElementById('captureText')!;
+    const captureDot = document.getElementById('captureDot')!;
+    const captureBtn = document.getElementById('toggleCapture')!;
 
     // Connection
     if (state.isConnected) {
@@ -31,7 +41,7 @@ function updateUI(state: DemoSafeState) {
     modeText.textContent = state.isDemoMode ? 'Demo' : 'Normal';
     headerIcon.textContent = state.isDemoMode ? '🔴' : '🛡️';
 
-    // Toggle button
+    // Toggle demo button
     if (state.isDemoMode) {
         toggleBtn.classList.add('active');
         toggleBtn.textContent = 'Exit Demo Mode';
@@ -45,6 +55,62 @@ function updateUI(state: DemoSafeState) {
 
     // Patterns
     patternCount.textContent = String(state.patternCount);
+
+    // Capture mode — only show when connected
+    if (state.isConnected) {
+        captureRow.style.display = '';
+        captureBtn.style.display = '';
+
+        if (state.isCaptureMode) {
+            captureDot.className = 'dot capture';
+            captureBtn.classList.add('active');
+            captureBtn.textContent = state.capturedCount > 0
+                ? `Stop Capture (${state.capturedCount} found)`
+                : 'Stop Capture';
+            startCountdown(state.captureTimeoutEnd);
+        } else {
+            captureDot.className = 'dot offline';
+            captureText.textContent = 'Inactive';
+            captureBtn.classList.remove('active');
+            captureBtn.textContent = 'Start Capture';
+            stopCountdown();
+        }
+    } else {
+        captureRow.style.display = 'none';
+        captureBtn.style.display = 'none';
+        stopCountdown();
+    }
+}
+
+function startCountdown(endTimestamp: number | null) {
+    stopCountdown();
+    if (!endTimestamp) {
+        document.getElementById('captureText')!.textContent = 'Active';
+        return;
+    }
+
+    const tick = () => {
+        const remaining = Math.max(0, Math.floor((endTimestamp - Date.now()) / 1000));
+        const minutes = Math.floor(remaining / 60);
+        const seconds = remaining % 60;
+        document.getElementById('captureText')!.textContent =
+            `Active (${minutes}:${String(seconds).padStart(2, '0')})`;
+
+        if (remaining <= 0) {
+            stopCountdown();
+            document.getElementById('captureText')!.textContent = 'Inactive';
+        }
+    };
+
+    tick();
+    countdownInterval = setInterval(tick, 1000);
+}
+
+function stopCountdown() {
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+    }
 }
 
 // Get initial state
@@ -62,4 +128,9 @@ chrome.runtime.onMessage.addListener((message) => {
 // Toggle demo mode
 document.getElementById('toggleDemo')!.addEventListener('click', () => {
     chrome.runtime.sendMessage({ type: 'toggle_demo_mode' });
+});
+
+// Toggle capture mode
+document.getElementById('toggleCapture')!.addEventListener('click', () => {
+    chrome.runtime.sendMessage({ type: 'toggle_capture_mode' });
 });

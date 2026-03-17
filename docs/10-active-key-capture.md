@@ -71,16 +71,57 @@ Content Script 開始主動掃描
 4. **剪貼簿監聽**：使用者在頁面上按複製時，攔截剪貼簿內容比對 pattern
 5. **Modal / Dialog**：許多平台在 modal 中一次性顯示 Key（如 OpenAI 的 "Copy" 按鈕旁）
 
-### 各平台 Key 產生頁面特徵
+### 各平台 Key 產生頁面特徵（實地調查 2026-03）
 
-| 平台 | Key 出現位置 | 特殊行為 |
-|------|-------------|---------|
-| OpenAI | Modal dialog，含 Copy 按鈕 | Key 只顯示一次，關閉後不可再查看 |
-| Anthropic | 頁面內 `<code>` 元素 | 同上，一次性顯示 |
-| AWS IAM | CSV 下載或頁面顯示 | Access Key + Secret Key 同時出現 |
-| Stripe | Dashboard 頁面內嵌顯示 | Restricted Key 可反覆查看 |
-| GitHub | Token 產生後頁面顯示 | 只顯示一次 |
-| Google Cloud | JSON 檔案下載 | 非頁面顯示，需攔截下載 |
+#### Category A：一次性顯示（關閉後不可再查看）— 截取最關鍵
+
+| 平台 | URL | 前綴 | 顯示方式 | Regex |
+|------|-----|------|---------|-------|
+| OpenAI | `platform.openai.com/api-keys` | `sk-proj-` | Modal dialog + Copy 按鈕 | `sk-proj-[A-Za-z0-9_-]{80,}` |
+| Anthropic | `console.anthropic.com/settings/keys` | `sk-ant-api03-` | Pop-up dialog + Copy Key 按鈕 | `sk-ant-api03-[A-Za-z0-9_-]{80,}` |
+| AWS IAM | `console.aws.amazon.com/iam/` | `AKIA` / 40字元 secret | 多步驟 wizard 最後一頁 + Download CSV | `AKIA[0-9A-Z]{16}` |
+| GitHub | `github.com/settings/tokens` | `ghp_` / `github_pat_` | Inline 頁面 + 警告文字 | `ghp_[A-Za-z0-9]{36}` |
+| SendGrid | `app.sendgrid.com/settings/api_keys` | `SG.` | 建立確認頁 | `SG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}` |
+| Stripe (live) | `dashboard.stripe.com/apikeys` | `sk_live_` | 建立時一次顯示 | `sk_(test\|live)_[a-zA-Z0-9]{24,}` |
+
+#### Category B：可重複查看 / Toggle 顯示
+
+| 平台 | URL | 前綴 | 顯示方式 | Regex |
+|------|-----|------|---------|-------|
+| Google Cloud | `console.cloud.google.com/apis/credentials` | `AIzaSy` | 永遠可見 + 點擊查看 | `AIzaSy[A-Za-z0-9_-]{33}` |
+| Hugging Face | `huggingface.co/settings/tokens` | `hf_` | Show/Hide toggle | `hf_[a-zA-Z0-9]{30,}` |
+| Slack | `api.slack.com/apps/*/oauth` | `xoxb-` / `xoxp-` | 永遠可見在 OAuth 頁面 | `xox[bpae]-[0-9]+-[A-Za-z0-9-]+` |
+| Stripe (test) | `dashboard.stripe.com/test/apikeys` | `sk_test_` | Reveal/Hide toggle | 同上 |
+| Vercel | `vercel.com/*/settings/environment-variables` | 各種 | Eye icon toggle（Sensitive 永不可見） | 依內容比對 |
+
+#### 各平台 DOM 元素結構（2026-03 實測）
+
+| 平台 | Key 所在元素 | Copy 機制 | 穩定選擇器 | 框架 |
+|------|------------|----------|-----------|------|
+| OpenAI | `div.api-key-token-value` | Modal (Radix UI) | ✅ `api-key-token-value` | Radix + Emotion |
+| Anthropic | `<code>` in table cell | Dialog 內 Copy 按鈕 | ⚠️ Tailwind `text-text-300` | React + Tailwind |
+| GitHub | `<clipboard-copy value="token">` | Web Component `value` attr | ✅ `clipboard-copy[value]` | Server-rendered + Web Components |
+| Google Cloud | `<services-show-api-key-string>` | Material 按鈕 (Show key) | ✅ 自訂元素名 | Angular + Material |
+| Hugging Face | `<td>` 裸文字節點 | 不明 | ❌ 無 wrapper | Server-rendered + Tailwind |
+| Stripe | 可能 `<input readonly>` | 相鄰按鈕 | ⚠️ CSS modules hash | React + CSS modules |
+| AWS | Cloudscape `Input` + `CopyToClipboard` | Cloudscape 元件 | ⚠️ `awsui_*_hash` | React + Cloudscape |
+| Slack | 不明 | 不明 | 不明 | 不明 |
+| SendGrid | 不明（一次性顯示） | 不明 | 不明 | 不明 |
+
+**重要發現**：
+- **沒有平台使用 Shadow DOM** — content script 皆可存取
+- **沒有平台的 CSP 阻擋 content script 注入**
+- **動態 class name**：OpenAI（Emotion `css-*`）、GCP（Angular `_nghost-*`）、Stripe（CSS modules）的 hash class 每次 build 都會變
+
+#### 截取策略對應
+
+| 策略 | 適用場景 | 實作方式 | 優先順序 |
+|------|---------|---------|---------|
+| TreeWalker + Regex | 所有平台通用 | 掃描文字節點比對 prefix pattern | **主要策略** |
+| MutationObserver | Category A 的 modal/dialog | 監聽 DOM 新增節點，觸發 TreeWalker | **必備** |
+| 平台特定選擇器 | OpenAI、GitHub、GCP | 用穩定的語義 class/元素名加速偵測 | 輔助加速 |
+| 剪貼簿監聽 | 使用者點 Copy 按鈕 | `navigator.clipboard` 攔截 | 補充偵測 |
+| `clipboard-copy[value]` | GitHub 專用 | 讀取 Web Component 的 `value` attribute | 平台特定 |
 
 ---
 
