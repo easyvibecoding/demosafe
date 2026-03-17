@@ -4,7 +4,7 @@
   "private": true,
   "license": "Apache-2.0",
   "scripts": {
-    "build": "esbuild src/background/service-worker.ts src/content-scripts/masker.ts src/content-scripts/pre-hide.ts src/popup/popup.ts src/options/options.ts --bundle --outdir=dist --format=esm",
+    "build": "node scripts/generate-prehide-css.js && esbuild src/background/service-worker.ts src/content-scripts/masker.ts src/content-scripts/pre-hide.ts src/popup/popup.ts src/options/options.ts --bundle --outdir=dist --format=esm",
     "watch": "npm run build -- --watch",
     "type-check": "tsc --noEmit",
     "lint": "eslint --ext .ts src/"

@@ -33,6 +33,7 @@
         "https://api.slack.com/*",
         "https://gitlab.com/-/user_settings/personal_access_tokens*"
       ],
+      "css": ["dist/content-scripts/pre-hide.css"],
       "js": ["dist/content-scripts/pre-hide.js"],
       "run_at": "document_start"
     },
