@@ -1,11 +1,13 @@
 /**
- * Built-in API Key format detection regex library.
- * Independent of vault patterns — used for active key capture.
- * Vault patterns are specific to stored keys (exact match).
- * Capture patterns are generic format detectors (class match).
+ * Single Source of Truth for all API Key platform definitions.
  *
- * Also includes platform-specific selectors for targeted DOM extraction
- * on known API console pages.
+ * To add a new platform, add ONE entry to CAPTURE_PATTERNS with all fields.
+ * Everything else (pre-hide CSS, detection, capture, masking) derives from it.
+ *
+ * Contributing a new platform:
+ *   1. Add a CapturePattern entry to CAPTURE_PATTERNS array below
+ *   2. Add the platform URL to manifest.json content_scripts.matches
+ *   3. That's it — pre-hide, capture, and masking all work automatically
  */
 
 // MARK: - Types
@@ -18,6 +20,8 @@ export interface CapturePattern {
     confidence: number;   // base confidence 0.0-1.0
     minLength: number;    // minimum match length for validation
     platformSelectors?: PlatformSelector[];
+    /** CSS rules to inject at document_start to hide key elements before render */
+    preHideCSS?: string;
 }
 
 export interface PlatformSelector {
@@ -51,12 +55,11 @@ export const CAPTURE_PATTERNS: CapturePattern[] = [
         regex: /sk-proj-[A-Za-z0-9_-]{20,}/g,
         confidence: 0.95,
         minLength: 28,
+        preHideCSS: `[data-state="open"] input[type="text"], [data-state="open"] code, td.api-key-token .api-key-token-value { visibility: hidden !important; }`,
         platformSelectors: [{
             hostname: 'platform.openai.com',
             selectors: [
-                // Table: truncated key (for reference, won't match full regex)
                 'td.api-key-token .api-key-token-value',
-                // Modal: full key during creation (Radix UI)
                 '[data-state="open"] input[type="text"]',
                 '[data-state="open"] code',
                 '[data-state="open"] [class*="token"]',
@@ -88,6 +91,7 @@ export const CAPTURE_PATTERNS: CapturePattern[] = [
         regex: /sk-ant-api03-[A-Za-z0-9_-]{20,}/g,
         confidence: 0.95,
         minLength: 34,
+        preHideCSS: `[role="dialog"] .bg-accent-900, [role="dialog"] .bg-accent-900 *, [role="dialog"] .font-mono { visibility: hidden !important; }`,
         platformSelectors: [
             {
                 hostname: 'console.anthropic.com',
@@ -111,6 +115,7 @@ export const CAPTURE_PATTERNS: CapturePattern[] = [
         regex: /AKIA[0-9A-Z]{16}/g,
         confidence: 0.90,
         minLength: 20,
+        preHideCSS: `[class*="awsui_input"] input[readonly] { visibility: hidden !important; }`,
         platformSelectors: [{
             hostname: 'console.aws.amazon.com',
             selectors: [
@@ -140,6 +145,7 @@ export const CAPTURE_PATTERNS: CapturePattern[] = [
         regex: /AIzaSy[A-Za-z0-9_-]{33}/g,
         confidence: 0.95,
         minLength: 39,
+        preHideCSS: `services-show-api-key-string, mat-dialog-container input, mat-dialog-container code { visibility: hidden !important; }`,
         platformSelectors: [{
             hostname: 'console.cloud.google.com',
             selectors: [
@@ -159,6 +165,7 @@ export const CAPTURE_PATTERNS: CapturePattern[] = [
         regex: /sk_(?:test|live)_[a-zA-Z0-9]{24,}/g,
         confidence: 0.95,
         minLength: 32,
+        preHideCSS: `input[type="text"][readonly] { visibility: hidden !important; }`,
         platformSelectors: [{
             hostname: 'dashboard.stripe.com',
             selectors: ['input[type="text"][readonly]', 'input[type="text"]', 'code', 'span'],
@@ -198,6 +205,7 @@ export const CAPTURE_PATTERNS: CapturePattern[] = [
         regex: /ghp_[A-Za-z0-9]{36}/g,
         confidence: 0.95,
         minLength: 40,
+        preHideCSS: `code#new-oauth-token, code.token, .flash code, clipboard-copy[value] { visibility: hidden !important; }`,
         platformSelectors: [{
             hostname: 'github.com',
             selectors: [
@@ -255,6 +263,7 @@ export const CAPTURE_PATTERNS: CapturePattern[] = [
         regex: /hf_[a-zA-Z0-9]{30,}/g,
         confidence: 0.90,
         minLength: 33,
+        preHideCSS: `.token-value code, input[readonly], div.flex.gap-2 > input, input.font-mono, input.truncate { visibility: hidden !important; }`,
         platformSelectors: [{
             hostname: 'huggingface.co',
             selectors: [
@@ -276,6 +285,7 @@ export const CAPTURE_PATTERNS: CapturePattern[] = [
         regex: /xoxb-[0-9]+-[A-Za-z0-9-]+/g,
         confidence: 0.90,
         minLength: 20,
+        preHideCSS: `input[type="text"].token_display, .token_display code { visibility: hidden !important; }`,
         platformSelectors: [{
             hostname: 'api.slack.com',
             selectors: ['input[type="text"]', 'code', '.token_display'],
@@ -315,6 +325,7 @@ export const CAPTURE_PATTERNS: CapturePattern[] = [
         regex: /SG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}/g,
         confidence: 0.95,
         minLength: 69,
+        preHideCSS: `[class*="api-key"] input, [class*="api-key"] code { visibility: hidden !important; }`,
         platformSelectors: [{
             hostname: 'app.sendgrid.com',
             selectors: ['input[type="text"]', 'code', '[class*="api-key"]'],
@@ -330,6 +341,7 @@ export const CAPTURE_PATTERNS: CapturePattern[] = [
         regex: /glpat-[A-Za-z0-9_-]{20,}/g,
         confidence: 0.90,
         minLength: 26,
+        preHideCSS: `input#created-personal-access-token, .flash-notice code { visibility: hidden !important; }`,
         platformSelectors: [{
             hostname: 'gitlab.com',
             selectors: ['input#created-personal-access-token', '.flash-notice code', 'clipboard-copy[value]'],
@@ -361,6 +373,29 @@ export const DOMAIN_SERVICE_MAP: Record<string, string[]> = {
 
 const DOMAIN_CONFIDENCE_BOOST = 0.05;
 const DOMAIN_CONFIDENCE_PENALTY = -0.1;
+
+// MARK: - Derived Exports (auto-generated from CAPTURE_PATTERNS)
+
+/** All unique key prefixes — derived from CAPTURE_PATTERNS */
+export const KEY_PREFIXES: string[] = [...new Set(CAPTURE_PATTERNS.map(p => p.prefix))];
+
+/**
+ * Get pre-hide CSS rules for a hostname.
+ * Collects preHideCSS from all patterns that have platformSelectors matching this hostname.
+ */
+export function getPreHideCSS(hostname: string): string | null {
+    const rules: string[] = [];
+    for (const pattern of CAPTURE_PATTERNS) {
+        if (!pattern.preHideCSS || !pattern.platformSelectors) continue;
+        for (const ps of pattern.platformSelectors) {
+            if (ps.hostname === hostname) {
+                rules.push(pattern.preHideCSS);
+                break; // Only add once per pattern even if multiple selectors match
+            }
+        }
+    }
+    return rules.length > 0 ? rules.join('\n') : null;
+}
 
 // MARK: - Matching Functions
 
