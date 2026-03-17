@@ -319,11 +319,14 @@ export interface CapturePattern {
 
 | 平台 | 截取 | 遮蔽 | Pre-hide | Toast | 存入 Core |
 |------|------|------|----------|-------|----------|
-| GitHub (Classic PAT) | ✅ | ✅ | ✅ | ✅ | ✅ |
-| HuggingFace | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Anthropic/Claude | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 測試頁面 | ✅ | ✅ | — | ✅ | ✅ |
-| OpenAI | ❓ 未測 | ❓ | ❓ | ❓ | ❓ |
+| GitHub (Classic PAT) | ✅ | ✅ masked | ✅ | ✅ | ✅ |
+| HuggingFace | ✅ | ✅ hidden | ✅ | ✅ | ✅ |
+| Anthropic/Claude | ✅ | ✅ hidden+masked | ✅ | ✅ | ✅ |
+| GitLab | ✅ | ✅ hidden (disc) | ✅ | ✅ | ✅ |
+| OpenAI | ✅ | ✅ hidden (React SPA) | ✅ | ✅ | ✅ |
+| AI Studio (Gemini) | ✅ clipboard | ✅ truncated | ✅ | ✅ | ✅ |
+| Google Cloud | ✅ | ✅ | ✅ | ✅ | ✅ |
+| AWS | ✅ dual-key | ✅ masked+clipboard | ✅ | ✅ stacked | ✅ |
 | Stripe | ❓ 未測 | ❓ | ❓ | ❓ | ❓ |
-| Google Cloud | ❓ 未測 | ❓ | ❓ | ❓ | ❓ |
-| AWS | ❓ 未測 | ❓ | ❓ | ❓ | ❓ |
+| Slack | ❓ 未測 | ❓ | ❓ | ❓ | ❓ |
+| SendGrid | ❓ 未測 | ❓ | ❓ | ❓ | ❓ |

@@ -1,6 +1,6 @@
 # Implementation Status Tracking
 
-> Last updated: 2026-03-16
+> Last updated: 2026-03-17
 
 ## Status Legend
 
@@ -75,13 +75,26 @@
 | Options page | ✅ | Pattern cache management + Dev IPC Config |
 | Dev IPC Config (workaround) | ✅ | Alternative to Native Messaging Host |
 | Native Messaging Host | ❌ | Swift binary not compiled/deployed |
-| Smart Extract (scan web pages) | ❌ | Spec §6 |
-| Key detection (input/textarea) | 🔶 | detectAndSubmitKeys written but not tested |
+| Active Key Capture | ✅ | 4-layer detection: DOM scan → attribute → clipboard → platform selectors |
+| capture-patterns.ts (SSoT) | ✅ | 11 platform pattern definitions, single file maintenance |
+| Pre-hide anti-flash | ✅ | 3 layers: manifest CSS → pre-hide.ts → instant MutationObserver |
+| Per-platform CSS isolation | ✅ | 12 separate CSS files, generated at build time |
+| Clipboard writeText interception | ✅ | `clipboard-patch.ts` MAIN world, supports AI Studio/AWS/Stripe |
+| React SPA masking | ✅ | Dialog inputs stay hidden, no value replacement |
+| AWS dual-key capture | ✅ | Access Key ID (DOM) + Secret Key (clipboard) |
+| Toast stacking | ✅ | Consecutive captures show stacked toasts |
+| Capture Mode (popup) | ✅ | Start/Stop capture + countdown timer |
+| E2E tested (8 platforms) | ✅ | GitHub, HuggingFace, GitLab, OpenAI, Anthropic, AI Studio, Google Cloud, AWS |
+| Stripe / Slack / SendGrid | 🔶 | Patterns defined, untested |
 
 ### Fixed Issues
 
 - Content script initial state out of sync: Proactively requests `get_state` from background on load
 - `toggle_demo_mode` action incorrectly sending `get_state`: Fixed
+- GitLab 2026 redesign: selectors updated from `#created-personal-access-token` to `.gl-alert-success`
+- OpenAI React SPA: `input.value` overwritten by framework causing plaintext exposure, switched to CSS hiding
+- AWS Secret Key `trimmed` variable undefined: fixed to `text.trim()`
+- preHideCSS too broad: OpenAI `input[type="text"]` hid Name input, narrowed scope
 
 ---
 
@@ -127,3 +140,14 @@ Per Spec §9 Roadmap:
 - ~~WebSocket connection~~ ✅
 - ~~Content Script masking~~ ✅
 - ~~Toggle Demo Mode~~ ✅
+
+### Phase 5: Active Key Capture ✅
+- ~~capture-patterns.ts SSoT~~ ✅
+- ~~Per-platform CSS isolation~~ ✅
+- ~~Pre-hide anti-flash (3 layers)~~ ✅
+- ~~Clipboard writeText interception~~ ✅
+- ~~React SPA masking~~ ✅
+- ~~AWS dual-key capture~~ ✅
+- ~~Toast stacking~~ ✅
+- ~~E2E tested 8 platforms~~ ✅
+- Stripe / Slack / SendGrid 🔶

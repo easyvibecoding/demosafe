@@ -1,6 +1,6 @@
 # 實作狀態追蹤
 
-> 最後更新：2026-03-16
+> 最後更新：2026-03-17
 
 ## 狀態圖例
 
@@ -75,13 +75,26 @@
 | Options 頁面 | ✅ | Pattern cache 管理 + Dev IPC Config |
 | Dev IPC Config (workaround) | ✅ | 替代 Native Messaging Host |
 | Native Messaging Host | ❌ | Swift binary 未編譯部署 |
-| Smart Extract (掃描網頁) | ❌ | Spec §6 |
-| Key detection (input/textarea) | 🔶 | detectAndSubmitKeys 已寫但未測試 |
+| Active Key Capture | ✅ | 4 層偵測：DOM scan → attribute → clipboard → platform selectors |
+| capture-patterns.ts (SSoT) | ✅ | 11 平台 pattern 定義，單一檔案維護 |
+| Pre-hide anti-flash | ✅ | 三層：manifest CSS → pre-hide.ts → instant MutationObserver |
+| Per-platform CSS isolation | ✅ | 12 個獨立 CSS 檔，build time 生成 |
+| Clipboard writeText interception | ✅ | `clipboard-patch.ts` MAIN world，支援 AI Studio/AWS/Stripe |
+| React SPA masking | ✅ | Dialog input 保持隱藏，不替換 value |
+| AWS dual-key capture | ✅ | Access Key ID (DOM) + Secret Key (clipboard) |
+| Toast stacking | ✅ | 連續 capture 堆疊顯示 |
+| Capture Mode (popup) | ✅ | Start/Stop capture + countdown timer |
+| E2E 測試 (8 平台) | ✅ | GitHub, HuggingFace, GitLab, OpenAI, Anthropic, AI Studio, Google Cloud, AWS |
+| Stripe / Slack / SendGrid | 🔶 | Pattern 已定義，未測試 |
 
 ### 已修復的問題
 
 - Content script 初始狀態不同步：載入時主動向 background 請求 `get_state`
 - `toggle_demo_mode` action 錯誤發送 `get_state`：已修正
+- GitLab 2026 改版：selectors 從 `#created-personal-access-token` 更新為 `.gl-alert-success`
+- OpenAI React SPA：`input.value` 被框架覆蓋導致明文暴露，改用 CSS 隱藏
+- AWS Secret Key `trimmed` 變數未定義：修正為 `text.trim()`
+- preHideCSS 過廣：OpenAI `input[type="text"]` 隱藏了 Name input，已縮窄
 
 ---
 
@@ -127,3 +140,14 @@
 - ~~WebSocket 連線~~ ✅
 - ~~Content Script masking~~ ✅
 - ~~Toggle Demo Mode~~ ✅
+
+### Phase 5: Active Key Capture ✅
+- ~~capture-patterns.ts SSoT~~ ✅
+- ~~Per-platform CSS isolation~~ ✅
+- ~~Pre-hide anti-flash (3 層)~~ ✅
+- ~~Clipboard writeText interception~~ ✅
+- ~~React SPA masking~~ ✅
+- ~~AWS dual-key capture~~ ✅
+- ~~Toast stacking~~ ✅
+- ~~E2E 測試 8 平台~~ ✅
+- Stripe / Slack / SendGrid 🔶

@@ -16,6 +16,7 @@ This directory splits the original `.docx` specification documents into searchab
 | `08-terminal-masking-research.md` | Terminal Masking technical research (node-pty vs ANSI fg=bg vs hybrid approach) |
 | `09-api-key-rotation-best-practices.md` | API Key deployment and rotation best practices by platform, zero-downtime rotation patterns |
 | `10-active-key-capture.md` | Active API Key web capture (Chrome Extension auto-detection and capture) |
+| `13-supported-platforms.md` | Supported platforms table, contribution guide, and platform quirks |
 
 ## Source Document Mapping
 
@@ -37,5 +38,7 @@ This directory splits the original `.docx` specification documents into searchab
 | Understand Chrome Extension architecture | [chrome-extension-architecture.md](02-technical-architecture/chrome-extension-architecture.md) |
 | Understand VS Code Extension architecture | [vscode-extension-architecture.md](02-technical-architecture/vscode-extension-architecture.md) |
 | Understand Terminal Masking approaches | [08-terminal-masking-research.md](08-terminal-masking-research.md) |
+| Understand Active Key Capture | [10-active-key-capture.md](10-active-key-capture.md) |
+| See supported platforms + add new ones | [13-supported-platforms.md](13-supported-platforms.md) |
 
 > All documents are written in English. Traditional Chinese versions are available in the parent docs/ directory.

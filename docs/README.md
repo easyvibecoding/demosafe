@@ -18,6 +18,7 @@
 | `10-active-key-capture.md` | 主動式 API Key 網頁截取（Chrome Extension 自動偵測擷取） |
 | `11-platform-specific-capture-strategies.md` | 各平台 API Key 截取策略（DOM 結構、選擇器、實作計畫） |
 | `12-platform-scraper-toolkit.md` | Platform Scraper 開發者維護工具（CDP 探測 + pattern 自動更新） |
+| `13-supported-platforms.md` | 支援平台清單、貢獻指南、平台特殊問題 |
 
 ## 來源文件對照
 
@@ -39,5 +40,7 @@
 | 了解 Chrome Extension 架構 | [chrome-extension-architecture.md](02-technical-architecture/chrome-extension-architecture.md) |
 | 了解 VS Code Extension 架構 | [vscode-extension-architecture.md](02-technical-architecture/vscode-extension-architecture.md) |
 | 了解 Terminal Masking 方案 | [08-terminal-masking-research.md](08-terminal-masking-research.md) |
+| 了解主動截取功能 | [10-active-key-capture.md](10-active-key-capture.md) |
+| 查看支援平台 + 新增平台 | [13-supported-platforms.md](13-supported-platforms.md) |
 
 > 所有文件以繁體中文撰寫，技術名詞保留英文原文。

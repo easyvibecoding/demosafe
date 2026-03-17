@@ -1,7 +1,8 @@
 # Active API Key Web Capture
 
-> Status: Future Development
-> Priority: Medium-High (Phase 2 Core Feature)
+> Status: ✅ Implemented (Phase 5)
+> 8 platforms E2E tested: GitHub, HuggingFace, GitLab, OpenAI, Anthropic, AI Studio, Google Cloud, AWS
+> See [Supported Platforms](13-supported-platforms.md) and [Platform Capture Strategies](../11-platform-specific-capture-strategies.md)
 
 ---
 

@@ -1,7 +1,8 @@
 # 主動式 API Key 網頁截取
 
-> 狀態：❌ 未來開發
-> 優先順序：中高（Phase 2 核心功能）
+> 狀態：✅ 已實作（Phase 5）
+> 8 平台 E2E 測試通過：GitHub, HuggingFace, GitLab, OpenAI, Anthropic, AI Studio, Google Cloud, AWS
+> 詳見 [支援平台清單](en/13-supported-platforms.md) 及 [平台截取策略](11-platform-specific-capture-strategies.md)
 
 ---
 
