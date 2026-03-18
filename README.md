@@ -150,9 +150,10 @@ See the [docs/](docs/) directory for detailed specifications:
 - [x] Chrome Extension (DOM masking, WebSocket IPC)
 - [x] Floating Toolbox HUD (hold-to-search + Scheme B lock)
 - [x] Keyboard shortcut paste (Ctrl+Option+[1-9])
-- [x] Native Messaging Host for Chrome
 - [x] Active Key Capture (auto-detect keys from web pages)
-- [ ] Platform-specific capture strategies (per-site DOM selectors)
+- [x] Platform-specific capture strategies (8 platforms tested, SSoT architecture)
+- [x] Per-platform CSS isolation + clipboard writeText interception
+- [ ] Native Messaging Host for Chrome
 - [ ] Smart Key Extraction confirmation dialog
 - [ ] Linked Key Groups (sequential paste)
 - [ ] API Key rotation & deployment sync

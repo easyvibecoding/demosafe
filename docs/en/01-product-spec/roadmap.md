@@ -12,12 +12,13 @@ The minimum viable product focuses on the **VS Code + Menu Bar** experience:
 - Two-tier key hierarchy and manual key entry
 - Basic linked key groups (sequential paste)
 
-## Phase 2: Browser and Capture
+## Phase 2: Browser and Capture ✅
 
-- Chrome Extension with content scripts for the top 20 API console pages
-- Smart key extraction from web pages
-- Automatic categorization by service provider
-- Key vault import/export
+- ~~Chrome Extension with content scripts for 11 platforms (SSoT architecture)~~ ✅
+- ~~Active key capture: 4-layer detection + clipboard interception~~ ✅
+- ~~Automatic categorization by service provider~~ ✅
+- ~~Per-platform CSS isolation + pre-hide anti-flash~~ ✅
+- Key vault import/export ❌
 
 ## Phase 3: System-Level
 
@@ -59,6 +60,17 @@ The minimum viable product focuses on the **VS Code + Menu Bar** experience:
 14. End-to-end test: add key → Demo Mode → VS Code masking → paste
 15. Offline test: Core shutdown → Extension continues masking
 16. Hotkey conflict testing
+
+### Phase 5: Active Key Capture ✅
+17. `capture-patterns.ts` Single Source of Truth architecture
+18. Per-platform CSS isolation (12 separate CSS files)
+19. Pre-hide anti-flash (manifest CSS → pre-hide.ts → instant MutationObserver)
+20. `clipboard-patch.ts` MAIN world clipboard interception
+21. React/Vue SPA masking (dialog inputs stay hidden)
+22. AWS dual-key capture (Access Key ID + Secret Key)
+23. Toast stacking for consecutive captures
+24. E2E tested 8 platforms (GitHub, HuggingFace, GitLab, OpenAI, Anthropic, AI Studio, Google Cloud, AWS)
+25. Developer skills (`/analyze-platform`, `/test-capture-flow`)
 
 ## Technology Choices
 

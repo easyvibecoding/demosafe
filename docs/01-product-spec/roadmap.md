@@ -12,12 +12,13 @@
 - 雙層 Key 階層與手動 Key 輸入
 - 基本關聯 Key 群組（順序貼上）
 
-## 第二階段：瀏覽器與擷取
+## 第二階段：瀏覽器與擷取 ✅
 
-- Chrome Extension，包含前 20 個 API 主控台頁面的 content scripts
-- 從網頁智慧擷取 Key
-- 依服務提供者自動分類
-- Key 保庫匯入/匯出
+- ~~Chrome Extension，支援 11 平台的 content scripts（SSoT 架構）~~ ✅
+- ~~主動式 Key 截取：四層偵測 + 剪貼簿攔截~~ ✅
+- ~~依服務提供者自動分類~~ ✅
+- ~~Per-platform CSS 隔離 + Pre-hide 防閃現~~ ✅
+- Key 保庫匯入/匯出 ❌
 
 ## 第三階段：系統級
 
@@ -59,6 +60,17 @@
 14. 端到端測試：新增 key → Demo Mode → VS Code 遮蔽 → 貼上
 15. 離線測試：Core 關閉 → Extension 持續遮蔽
 16. 快捷鍵衝突測試
+
+### Phase 5: Active Key Capture ✅
+17. `capture-patterns.ts` Single Source of Truth 架構
+18. Per-platform CSS isolation（12 個平台獨立 CSS）
+19. Pre-hide anti-flash（manifest CSS → pre-hide.ts → instant MutationObserver）
+20. `clipboard-patch.ts` MAIN world 剪貼簿攔截
+21. React/Vue SPA masking（dialog input 保持隱藏）
+22. AWS 雙金鑰截取（Access Key ID + Secret Key）
+23. Toast 堆疊顯示
+24. E2E 測試 8 平台（GitHub, HuggingFace, GitLab, OpenAI, Anthropic, AI Studio, Google Cloud, AWS）
+25. Developer skills（`/analyze-platform`, `/test-capture-flow`）
 
 ## 技術選型
 
