@@ -403,8 +403,8 @@ const DOMAIN_CONFIDENCE_PENALTY = -0.1;
 
 // MARK: - Derived Exports (auto-generated from CAPTURE_PATTERNS)
 
-/** All unique key prefixes — derived from CAPTURE_PATTERNS */
-export const KEY_PREFIXES: string[] = [...new Set(CAPTURE_PATTERNS.map(p => p.prefix))];
+/** All unique key prefixes — derived from CAPTURE_PATTERNS (empty prefixes excluded) */
+export const KEY_PREFIXES: string[] = [...new Set(CAPTURE_PATTERNS.map(p => p.prefix).filter(p => p.length > 0))];
 
 /**
  * Get pre-hide CSS rules for a hostname.
