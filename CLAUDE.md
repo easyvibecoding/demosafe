@@ -91,6 +91,12 @@ These are absolute rules — never violate them:
 - **NMH no plaintext queue**: When both WS and NMH fail for `submit_captured_key`, the key is NOT queued to `chrome.storage.local`. Storing plaintext API keys in browser storage violates security red line #1. The key is lost and must be re-captured.
 - **NMH isConnected semantics**: NMH relay success does NOT set `state.isConnected = true` — NMH is a one-shot relay, not a persistent connection. Popup shows "Connected (NMH)" via `connectionPath` field only, while WS reconnect continues independently.
 - **NMHInstaller**: Core auto-installs NMH binary + Chrome manifest from app bundle Resources on startup. Uses binary file size comparison for version checking. `install.sh` retained as manual fallback.
+- **Smart Key Extraction confirmation dialog**: Three-tier confidence strategy: >= 0.7 auto-store, 0.35~0.7 mask + confirmation dialog, < 0.35 ignore. Dialog is inline content script overlay with editable service name, 30s auto-dismiss, Escape support, queue for multiple pending. rejectedKeys Set persists for page lifetime.
+- **Universal Masking/Detection toggles**: Two popup toggles (default OFF) extend masking and detection to non-supported platforms. Supported platforms unaffected — Demo Mode auto-enables both. Stored in chrome.storage.local.
+- **Generic key pattern**: `generic-key` pattern (confidence 0.50) matches common prefixes (key-, token-, api-, secret-, sk-, pk-, rk-) + 30+ char alphanumeric. prefix is empty string — KEY_PREFIXES filters empty prefixes to prevent containsFullKey() false positives.
+- **Turbo navigation pre-hide**: `turbo:before-render` listener in pre-hide.ts hides key elements in incoming body BEFORE Turbo renders. Prevents GitHub PAT flash on partial page transition.
+- **OpenAI pre-hide scope**: preHideCSS must NOT include `td.api-key-token .api-key-token-value` — these are truncated previews (sk-...QngA) that never match full patterns, causing permanent hidden state.
+- **Toast duration**: 25 seconds (changed from 10s for better visibility during demos).
 
 ## Documentation
 

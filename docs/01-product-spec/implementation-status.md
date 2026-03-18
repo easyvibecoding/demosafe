@@ -85,6 +85,10 @@
 | React SPA masking | ✅ | Dialog input 保持隱藏，不替換 value |
 | AWS dual-key capture | ✅ | Access Key ID (DOM) + Secret Key (clipboard) |
 | Toast stacking | ✅ | 連續 capture 堆疊顯示 |
+| Smart Key Extraction 確認對話框 | ✅ | 三區間信心度策略 + 確認 UI + reject 恢復 |
+| Universal Masking / Detection | ✅ | Popup 雙開關，擴展非已知平台 |
+| Generic key pattern | ✅ | 通用 prefix 偵測（confidence 0.50） |
+| Turbo 導航防閃現 | ✅ | turbo:before-render pre-hide |
 | Capture Mode (popup) | ✅ | Start/Stop capture + countdown timer |
 | E2E 測試 (8 平台) | ✅ | GitHub, HuggingFace, GitLab, OpenAI, Anthropic, AI Studio, Google Cloud, AWS |
 | Stripe / Slack / SendGrid | 🔶 | Pattern 已定義，未測試 |

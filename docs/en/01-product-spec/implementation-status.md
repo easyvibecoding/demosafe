@@ -85,6 +85,10 @@
 | React SPA masking | ✅ | Dialog inputs stay hidden, no value replacement |
 | AWS dual-key capture | ✅ | Access Key ID (DOM) + Secret Key (clipboard) |
 | Toast stacking | ✅ | Consecutive captures show stacked toasts |
+| Smart Key Extraction confirmation dialog | ✅ | Three-tier confidence strategy + confirmation UI + reject restore |
+| Universal Masking / Detection | ✅ | Popup dual toggles, extend to non-supported platforms |
+| Generic key pattern | ✅ | Generic prefix detection (confidence 0.50) |
+| Turbo navigation anti-flash | ✅ | turbo:before-render pre-hide |
 | Capture Mode (popup) | ✅ | Start/Stop capture + countdown timer |
 | E2E tested (8 platforms) | ✅ | GitHub, HuggingFace, GitLab, OpenAI, Anthropic, AI Studio, Google Cloud, AWS |
 | Stripe / Slack / SendGrid | 🔶 | Patterns defined, untested |
