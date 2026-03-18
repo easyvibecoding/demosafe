@@ -18,6 +18,7 @@
 - ~~主動式 Key 截取：四層偵測 + 剪貼簿攔截~~ ✅
 - ~~依服務提供者自動分類~~ ✅
 - ~~Per-platform CSS 隔離 + Pre-hide 防閃現~~ ✅
+- ~~Native Messaging Host 雙路 IPC（WS primary + NMH fallback）~~ ✅
 - Key 保庫匯入/匯出 ❌
 
 ## 第三階段：系統級
@@ -71,6 +72,14 @@
 23. Toast 堆疊顯示
 24. E2E 測試 8 平台（GitHub, HuggingFace, GitLab, OpenAI, Anthropic, AI Studio, Google Cloud, AWS）
 25. Developer skills（`/analyze-platform`, `/test-capture-flow`）
+
+### Phase 6: NMH 雙路 IPC ✅
+26. NativeMessagingHost.swift 升級（get_config + WS relay）
+27. IPCServer `.nmh` clientType + broadcast 排除
+28. service-worker.ts `sendRequest()` 統一分派（WS → NMH fallback）
+29. Popup 連線路徑顯示（WebSocket / NMH / Offline）
+30. NMHInstaller Core 啟動自動安裝
+31. 安全紅線：明文 key 不存入 chrome.storage
 
 ## 技術選型
 

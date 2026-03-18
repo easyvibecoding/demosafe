@@ -153,7 +153,7 @@ See the [docs/](docs/) directory for detailed specifications:
 - [x] Active Key Capture (auto-detect keys from web pages)
 - [x] Platform-specific capture strategies (8 platforms tested, SSoT architecture)
 - [x] Per-platform CSS isolation + clipboard writeText interception
-- [ ] Native Messaging Host for Chrome
+- [x] Native Messaging Host dual-path IPC (WS primary + NMH fallback)
 - [ ] Smart Key Extraction confirmation dialog
 - [ ] Linked Key Groups (sequential paste)
 - [ ] API Key rotation & deployment sync

@@ -153,7 +153,7 @@ swift test             # 執行測試
 - [x] 主動式 Key 截取（網頁自動偵測擷取，四層掃描）
 - [x] 各平台專屬截取策略（8 平台 E2E 測試通過，SSoT 架構）
 - [x] Per-platform CSS 隔離 + clipboard writeText 攔截
-- [ ] Chrome Native Messaging Host
+- [x] Native Messaging Host 雙路 IPC（WS primary + NMH fallback）
 - [ ] 智慧 Key 擷取確認對話框
 - [ ] 關聯 Key 群組（順序貼上）
 - [ ] API Key 輪替與部署同步

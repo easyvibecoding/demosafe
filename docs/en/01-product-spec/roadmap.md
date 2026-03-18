@@ -18,6 +18,7 @@ The minimum viable product focuses on the **VS Code + Menu Bar** experience:
 - ~~Active key capture: 4-layer detection + clipboard interception~~ ✅
 - ~~Automatic categorization by service provider~~ ✅
 - ~~Per-platform CSS isolation + pre-hide anti-flash~~ ✅
+- ~~Native Messaging Host dual-path IPC (WS primary + NMH fallback)~~ ✅
 - Key vault import/export ❌
 
 ## Phase 3: System-Level
@@ -71,6 +72,14 @@ The minimum viable product focuses on the **VS Code + Menu Bar** experience:
 23. Toast stacking for consecutive captures
 24. E2E tested 8 platforms (GitHub, HuggingFace, GitLab, OpenAI, Anthropic, AI Studio, Google Cloud, AWS)
 25. Developer skills (`/analyze-platform`, `/test-capture-flow`)
+
+### Phase 6: NMH Dual-path IPC ✅
+26. NativeMessagingHost.swift upgrade (get_config + WS relay)
+27. IPCServer `.nmh` clientType + broadcast exclusion
+28. service-worker.ts `sendRequest()` unified dispatch (WS → NMH fallback)
+29. Popup connection path display (WebSocket / NMH / Offline)
+30. NMHInstaller auto-install on Core startup
+31. Security red line: plaintext keys not stored in chrome.storage
 
 ## Technology Choices
 
