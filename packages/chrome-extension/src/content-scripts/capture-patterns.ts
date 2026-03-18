@@ -486,6 +486,16 @@ export function matchAgainstCapturePatterns(
 /**
  * Get platform-specific selectors for the current hostname.
  */
+/**
+ * Get the regex source string for a capture pattern by ID.
+ * Returns the structural pattern (e.g. "sk-proj-[A-Za-z0-9_-]{20,}") — never a literal key value.
+ * Returns null if patternId is not found (e.g. aws-secret-key which has no regex in CAPTURE_PATTERNS).
+ */
+export function getPatternRegexSource(patternId: string): string | null {
+    const pattern = CAPTURE_PATTERNS.find(p => p.id === patternId);
+    return pattern ? pattern.regex.source : null;
+}
+
 export function getPlatformSelectors(hostname: string): Array<{
     pattern: CapturePattern;
     selector: PlatformSelector;
