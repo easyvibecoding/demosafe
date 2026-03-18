@@ -154,7 +154,7 @@ swift test             # 執行測試
 - [x] 各平台專屬截取策略（8 平台 E2E 測試通過，SSoT 架構）
 - [x] Per-platform CSS 隔離 + clipboard writeText 攔截
 - [x] Native Messaging Host 雙路 IPC（WS primary + NMH fallback）
-- [ ] 智慧 Key 擷取確認對話框
+- [x] 智慧 Key 擷取確認對話框（完整 Chrome ↔ Swift Core IPC：偵測 → submit → Keychain 儲存 → pattern 廣播）
 - [ ] 關聯 Key 群組（順序貼上）
 - [ ] API Key 輪替與部署同步
 - [ ] Terminal 遮蔽（node-pty proxy）

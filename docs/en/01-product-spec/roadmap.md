@@ -81,6 +81,16 @@ The minimum viable product focuses on the **VS Code + Menu Bar** experience:
 30. NMHInstaller auto-install on Core startup
 31. Security red line: plaintext keys not stored in chrome.storage
 
+### Phase 7: Smart Key Extraction Confirmation Dialog ✅
+32. Three-tier confidence strategy (>= 0.7 auto-store, 0.35~0.7 confirmation dialog, < 0.35 ignore)
+33. Inline content script confirmation dialog (editable service name, 30s auto-dismiss, queue)
+34. `confirm_captured_key` handler + `removeMaskForValue()` reject restore
+35. `rejectedKeys` + `isAlreadyStoredKey()` three-layer deduplication
+36. Universal Masking / Detection dual toggles (popup, default OFF)
+37. Generic key pattern (confidence 0.50)
+38. OpenAI pre-hide CSS fix (remove truncated preview selector)
+39. GitHub Turbo navigation anti-flash (`turbo:before-render`)
+
 ## Technology Choices
 
 | Component | Recommended Approach |

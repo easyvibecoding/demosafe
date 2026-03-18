@@ -30,13 +30,14 @@
 
 ### 尚未實作的 Core 功能
 
-| 功能 | 對應 Spec 章節 | 優先順序 |
-|------|--------------|---------|
-| `⌃⌥⌘V` capture clipboard | Spec §4.4 | 中 |
-| Smart Key Extraction | Spec §6 | 中 |
-| Linked Key Groups (sequential paste) | Spec §6.3 | 中 |
-| Shortcut conflict detection | Spec §4.4 | 低 |
-| Import / Export vault | Spec §9.1 | 低 |
+| 功能 | 對應 Spec 章節 | 優先順序 | 備註 |
+|------|--------------|---------|---------|
+| `⌃⌥⌘V` capture clipboard | Spec §4.4 | 中 | HotkeyManager 端尚未掛載 ClipboardEngine.detectKeys |
+| Linked Key Groups (sequential paste) | Spec §6.3 | 中 | `LinkedGroup`/`GroupEntry` 結構未建立 |
+| Shortcut conflict detection | Spec §4.4 | 低 | |
+| Import / Export vault | Spec §9.1 | 低 | |
+
+> **注意**：Smart Key Extraction 的 Chrome ↔ Core IPC 溝通已完整實作（`submit_captured_key` → `handleSubmitCapturedKey` → VaultManager + Keychain → `pattern_cache_sync`）。上方僅列出真正尚未實作的獨立功能。
 
 ---
 

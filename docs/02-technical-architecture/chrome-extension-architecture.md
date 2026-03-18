@@ -1,7 +1,6 @@
 # Chrome Extension 架構
 
-> 狀態：✅ 核心功能完成（WebSocket 連線、NMH 雙路 IPC、Content Script masking、Popup UI）
-> 尚未完成：Smart Extract
+> 狀態：✅ 核心功能完成（WebSocket 連線、NMH 雙路 IPC、Content Script masking、Popup UI、Smart Key Extraction 確認對話框）
 
 ---
 

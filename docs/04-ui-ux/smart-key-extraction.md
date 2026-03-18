@@ -1,6 +1,12 @@
 # 智慧 Key 擷取
 
-> 狀態：❌ 尚未實作（Phase 2 範圍）
+> 狀態：✅ 完成（Chrome Extension ↔ Swift Core 完整溝通）
+>
+> **已實作完整流程**：Chrome content script 偵測 → `submit_captured_key` IPC → Swift Core `handleSubmitCapturedKey` → `VaultManager.addKey()` + Keychain 儲存 → `pattern_cache_sync` 廣播。
+>
+> **尚未實作**（屬於獨立功能）：
+> - `⌃⌥⌘V` 剪貼簿快速擷取快捷鍵（Swift Core HotkeyManager 端）
+> - Linked Key Groups 順序貼上（`LinkedGroup` / `GroupEntry` 結構尚未建立）
 
 ## 概述
 

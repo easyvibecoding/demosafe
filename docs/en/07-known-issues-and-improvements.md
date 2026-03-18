@@ -2,12 +2,12 @@
 
 ## Chrome Extension
 
-### Native Messaging Host Not Yet Installed
-- `native-host/NativeMessagingHost.swift` is written but not yet compiled and deployed
-- Need to compile the Swift binary and place it at `/Applications/DemoSafe.app/Contents/Helpers/demosafe-nmh`
-- Need to install `com.demosafe.nmh.json` to `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/`
-- Need to replace `EXTENSION_ID_HERE` with the actual extension ID
-- **Current workaround**: Options page provides Dev IPC Config for manual port/token input
+### ~~Native Messaging Host Not Yet Installed~~ ✅ Resolved
+- `NMHInstaller` implemented: Core auto-installs binary + Chrome manifest from app bundle Resources on startup
+- Binary installed to `/Applications/DemoSafe.app/Contents/Helpers/demosafe-nmh`
+- Manifest installed to `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.demosafe.nmh.json`
+- Extension ID obtained automatically by NMH at runtime via `chrome.runtime`; no manual replacement needed
+- **Workaround retained**: Dev IPC Config on Options page remains available for development testing
 
 ### Content Script Pattern Matching Precision
 - The pattern `sk-[a-zA-Z0-9]+` in Vault does not include the `-` character

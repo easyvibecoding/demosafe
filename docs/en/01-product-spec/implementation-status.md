@@ -30,13 +30,14 @@
 
 ### Core Features Not Yet Implemented
 
-| Feature | Spec Section | Priority |
-|---------|-------------|----------|
-| `⌃⌥⌘V` capture clipboard | Spec §4.4 | Medium |
-| Smart Key Extraction | Spec §6 | Medium |
-| Linked Key Groups (sequential paste) | Spec §6.3 | Medium |
-| Shortcut conflict detection | Spec §4.4 | Low |
-| Import / Export vault | Spec §9.1 | Low |
+| Feature | Spec Section | Priority | Notes |
+|---------|-------------|----------|---------|
+| `⌃⌥⌘V` capture clipboard | Spec §4.4 | Medium | HotkeyManager not yet wired to ClipboardEngine.detectKeys |
+| Linked Key Groups (sequential paste) | Spec §6.3 | Medium | `LinkedGroup`/`GroupEntry` structs not yet created |
+| Shortcut conflict detection | Spec §4.4 | Low | |
+| Import / Export vault | Spec §9.1 | Low | |
+
+> **Note**: Smart Key Extraction Chrome ↔ Core IPC is fully implemented (`submit_captured_key` → `handleSubmitCapturedKey` → VaultManager + Keychain → `pattern_cache_sync` broadcast). The table above lists only features that are genuinely not yet implemented.
 
 ---
 

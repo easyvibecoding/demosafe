@@ -81,6 +81,16 @@
 30. NMHInstaller Core 啟動自動安裝
 31. 安全紅線：明文 key 不存入 chrome.storage
 
+### Phase 7: Smart Key Extraction 確認對話框 ✅
+32. 三區間信心度策略（>= 0.7 自動存、0.35~0.7 確認對話框、< 0.35 忽略）
+33. Content script 內嵌確認對話框（可編輯 service name、30 秒自動關閉、排隊機制）
+34. `confirm_captured_key` handler + `removeMaskForValue()` 拒絕恢復
+35. `rejectedKeys` + `isAlreadyStoredKey()` 三層去重
+36. Universal Masking / Detection 雙開關（Popup toggle、預設 OFF）
+37. Generic key pattern（confidence 0.50）
+38. OpenAI pre-hide CSS 修正（移除截斷預覽選擇器）
+39. GitHub Turbo 導航防閃現（`turbo:before-render`）
+
 ## 技術選型
 
 | 元件 | 建議方案 |

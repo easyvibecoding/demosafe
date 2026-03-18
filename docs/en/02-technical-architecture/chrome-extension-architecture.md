@@ -1,7 +1,6 @@
 # Chrome Extension Architecture
 
-> Status: ✅ Core features completed (WebSocket connection, NMH dual-path IPC, Content Script masking, Popup UI)
-> Not yet completed: Smart Extract
+> Status: ✅ Core features completed (WebSocket connection, NMH dual-path IPC, Content Script masking, Popup UI, Smart Key Extraction confirmation dialog)
 
 ---
 

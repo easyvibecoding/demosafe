@@ -41,6 +41,7 @@
 | 了解 VS Code Extension 架構 | [vscode-extension-architecture.md](02-technical-architecture/vscode-extension-architecture.md) |
 | 了解 Terminal Masking 方案 | [08-terminal-masking-research.md](08-terminal-masking-research.md) |
 | 了解主動截取功能 | [10-active-key-capture.md](10-active-key-capture.md) |
+| 了解確認對話框 + Universal 開關 | [confirmation-dialog-spec.md](04-ui-ux/confirmation-dialog-spec.md) |
 | 查看支援平台 + 新增平台 | [13-supported-platforms.md](13-supported-platforms.md) |
 
 > 所有文件以繁體中文撰寫，技術名詞保留英文原文。

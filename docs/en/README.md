@@ -39,6 +39,7 @@ This directory splits the original `.docx` specification documents into searchab
 | Understand VS Code Extension architecture | [vscode-extension-architecture.md](02-technical-architecture/vscode-extension-architecture.md) |
 | Understand Terminal Masking approaches | [08-terminal-masking-research.md](08-terminal-masking-research.md) |
 | Understand Active Key Capture | [10-active-key-capture.md](10-active-key-capture.md) |
+| Understand confirmation dialog + Universal toggles | [confirmation-dialog-spec.md](04-ui-ux/confirmation-dialog-spec.md) |
 | See supported platforms + add new ones | [13-supported-platforms.md](13-supported-platforms.md) |
 
 > All documents are written in English. Traditional Chinese versions are available in the parent docs/ directory.

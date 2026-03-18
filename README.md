@@ -154,7 +154,7 @@ See the [docs/](docs/) directory for detailed specifications:
 - [x] Platform-specific capture strategies (8 platforms tested, SSoT architecture)
 - [x] Per-platform CSS isolation + clipboard writeText interception
 - [x] Native Messaging Host dual-path IPC (WS primary + NMH fallback)
-- [ ] Smart Key Extraction confirmation dialog
+- [x] Smart Key Extraction confirmation dialog (full Chrome ↔ Swift Core IPC: detect → submit → Keychain store → pattern sync)
 - [ ] Linked Key Groups (sequential paste)
 - [ ] API Key rotation & deployment sync
 - [ ] Terminal masking (node-pty proxy)
