@@ -60,20 +60,22 @@
 ### 連線架構
 
 - Background Service Worker 維護與 Core 的 WebSocket 連線
-- Native Messaging Host（Swift helper）讀取 `ipc.json` 以輔助探索
+- Native Messaging Host（Swift helper）提供 config 查詢 + WS relay 雙路備援
 
 ### Native Messaging Host 規格
 
-Chrome Extension 無法直接讀取檔案系統（`~/.demosafe/ipc.json`），因此需要 Native Messaging Host 作為橋接：
+Chrome Extension 無法直接讀取檔案系統（`~/.demosafe/ipc.json`），因此需要 Native Messaging Host 作為橋接。NMH 同時作為 WS 斷線時的 fallback relay。
 
 | 項目 | 說明 |
 |------|------|
-| 實作語言 | Swift（macOS helper binary） |
-| 安裝位置 | `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.demosafe.nmh.json` |
-| 職責 | 讀取 `ipc.json` → 回傳 `{port, token}` 給 Background Service Worker |
+| 實作語言 | Swift（macOS helper binary，standalone swiftc 編譯，~93KB） |
+| 安裝位置 | binary: `~/.demosafe/bin/demosafe-nmh`，manifest: `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.demosafe.nmh.json` |
+| 職責 | (1) 讀取 `ipc.json` → 回傳 `{port, token}`；(2) WS relay：get_state / submit_captured_key / toggle_demo_mode |
 | 通訊協定 | Chrome Native Messaging（stdin/stdout JSON） |
-| 觸發時機 | Extension 啟動時呼叫一次取得連線資訊；Core 重啟後重新呼叫 |
-| 安全性 | manifest 限定 `allowed_origins` 僅允許本 Extension ID |
+| WS Relay | 短暫連線（connect → handshake → 1 request → 1 response → close），clientType: `"nmh"`，5s timeout |
+| 觸發時機 | Extension 啟動時取連線資訊；WS 斷線時 fallback relay |
+| 安裝方式 | Core 啟動時 NMHInstaller 自動安裝；`install.sh` 手動備援 |
+| 安全性 | manifest 限定 `allowed_origins`；NMH 不儲存任何資料，僅轉發 |
 
 ---
 

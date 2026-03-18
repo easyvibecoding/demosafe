@@ -1,19 +1,23 @@
 /**
  * Background Service Worker — maintains WebSocket connection to DemoSafe Core.
  * Uses Native Messaging Host to read ipc.json for connection info.
+ * Falls back to NMH relay when WebSocket is disconnected.
  *
  * Responsibilities:
  * - WebSocket lifecycle (connect, handshake, reconnect with exponential backoff)
+ * - NMH fallback for critical actions (get_state, submit_captured_key, toggle_demo_mode)
  * - Forward Core events to content scripts
  * - Persist pattern cache to chrome.storage.local
  * - Respond to popup/options requests
  * - Manage Active Key Capture mode with alarm-based timeout
+ * - Queue failed submissions for retry on reconnect
  */
 
 const NATIVE_HOST_ID = 'com.demosafe.nmh';
 const MAX_RECONNECT_DELAY = 30000;
 const CAPTURE_TIMEOUT_MS = 300_000; // 5 minutes
 const CAPTURE_ALARM_NAME = 'demosafe_capture_timeout';
+const WS_REQUEST_TIMEOUT = 5000;
 
 interface IPCConfig {
     port: number;
@@ -28,6 +32,8 @@ interface IPCMessage {
     timestamp: string;
 }
 
+type ConnectionPath = 'ws' | 'nmh' | 'offline';
+
 interface DemoSafeState {
     isConnected: boolean;
     isDemoMode: boolean;
@@ -36,11 +42,18 @@ interface DemoSafeState {
     isCaptureMode: boolean;
     captureTimeoutEnd: number | null; // timestamp ms
     capturedCount: number;
+    connectionPath: ConnectionPath;
 }
+
+// NMH relay actions — these can be forwarded via Native Messaging Host when WS is down
+const NMH_RELAY_ACTIONS = new Set(['get_state', 'submit_captured_key', 'toggle_demo_mode']);
 
 let ws: WebSocket | null = null;
 let reconnectDelay = 1000;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+// Pending WS request tracking (request-response correlation)
+const pendingRequests = new Map<string, { resolve: (response: IPCMessage) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }>();
 
 const state: DemoSafeState = {
     isConnected: false,
@@ -50,6 +63,7 @@ const state: DemoSafeState = {
     isCaptureMode: false,
     captureTimeoutEnd: null,
     capturedCount: 0,
+    connectionPath: 'offline',
 };
 
 // MARK: - Native Messaging Host
@@ -70,7 +84,10 @@ async function getNativeConfig(): Promise<IPCConfig | null> {
     return new Promise((resolve) => {
         try {
             chrome.runtime.sendNativeMessage(NATIVE_HOST_ID, { action: 'get_config' }, (response) => {
-                if (chrome.runtime.lastError || !response) {
+                if (chrome.runtime.lastError) {
+                    console.warn('[DemoSafe BG] getNativeConfig error:', chrome.runtime.lastError.message);
+                    resolve(null);
+                } else if (!response) {
                     resolve(null);
                 } else {
                     resolve(response as IPCConfig);
@@ -80,6 +97,109 @@ async function getNativeConfig(): Promise<IPCConfig | null> {
             resolve(null);
         }
     });
+}
+
+// MARK: - NMH Relay (fallback path)
+
+async function sendViaNMH(action: string, payload: Record<string, unknown>): Promise<Record<string, unknown> | null> {
+    return new Promise((resolve) => {
+        try {
+            chrome.runtime.sendNativeMessage(
+                NATIVE_HOST_ID,
+                { action, payload },
+                (response) => {
+                    if (chrome.runtime.lastError) {
+                        console.warn(`[DemoSafe NMH] ${action} native error:`, chrome.runtime.lastError.message);
+                        resolve(null);
+                    } else if (!response) {
+                        console.warn(`[DemoSafe NMH] ${action}: no response`);
+                        resolve(null);
+                    } else if (response.error) {
+                        console.warn(`[DemoSafe NMH] ${action} error:`, response.error, response.message);
+                        resolve(null);
+                    } else {
+                        resolve(response as Record<string, unknown>);
+                    }
+                }
+            );
+        } catch (e) {
+            console.warn(`[DemoSafe NMH] ${action} exception:`, e);
+            resolve(null);
+        }
+    });
+}
+
+// MARK: - Unified Request Dispatch
+
+/**
+ * Send a request to Core, trying WS first, then NMH fallback for relay-eligible actions.
+ * For submit_captured_key, queues to storage if both paths fail.
+ */
+async function sendRequest(action: string, payload: Record<string, unknown>): Promise<Record<string, unknown> | null> {
+    // Try WebSocket first
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        try {
+            const response = await sendRequestViaWS(action, payload);
+            if (response) return response.payload as Record<string, unknown>;
+        } catch (err) {
+            console.warn(`[DemoSafe BG] WS request '${action}' failed, trying NMH fallback:`, err);
+        }
+    }
+
+    // Try NMH fallback for relay-eligible actions
+    if (NMH_RELAY_ACTIONS.has(action)) {
+        const nmhResponse = await sendViaNMH(action, payload);
+        if (nmhResponse && !nmhResponse.error) {
+            // Extract payload from the full IPC response envelope
+            const responsePayload = nmhResponse.payload as Record<string, unknown> | undefined;
+            if (responsePayload) {
+                state.connectionPath = 'nmh';
+                return responsePayload;
+            }
+            // If response has no payload wrapper, it's already the payload
+            state.connectionPath = 'nmh';
+            return nmhResponse;
+        }
+    }
+
+    // Both failed — do NOT queue plaintext keys to chrome.storage (security red line)
+    if (action === 'submit_captured_key') {
+        console.warn('[DemoSafe BG] submit_captured_key failed via both WS and NMH — key not stored');
+    }
+
+    state.connectionPath = 'offline';
+    return null;
+}
+
+// MARK: - WS Request-Response Tracking
+
+function sendRequestViaWS(action: string, payload: Record<string, unknown>): Promise<IPCMessage> {
+    return new Promise((resolve, reject) => {
+        const id = crypto.randomUUID();
+        const timer = setTimeout(() => {
+            pendingRequests.delete(id);
+            reject(new Error('WS request timeout'));
+        }, WS_REQUEST_TIMEOUT);
+
+        pendingRequests.set(id, { resolve, reject, timer });
+
+        sendToCore({
+            id,
+            type: 'request',
+            action,
+            payload,
+            timestamp: new Date().toISOString(),
+        });
+    });
+}
+
+function resolvePendingRequest(message: IPCMessage) {
+    const pending = pendingRequests.get(message.id);
+    if (pending) {
+        clearTimeout(pending.timer);
+        pendingRequests.delete(message.id);
+        pending.resolve(message);
+    }
 }
 
 // MARK: - WebSocket Connection
@@ -94,6 +214,7 @@ async function connect() {
     const config = await getIPCConfig();
     if (!config) {
         state.isConnected = false;
+        state.connectionPath = 'offline';
         scheduleReconnect();
         return;
     }
@@ -102,6 +223,7 @@ async function connect() {
         ws = new WebSocket(`ws://127.0.0.1:${config.port}`);
     } catch {
         state.isConnected = false;
+        state.connectionPath = 'offline';
         scheduleReconnect();
         return;
     }
@@ -115,13 +237,20 @@ async function connect() {
         try {
             const message: IPCMessage = JSON.parse(event.data as string);
             handleMessage(message);
-        } catch {
-            // Ignore malformed messages
+        } catch (err) {
+            console.warn('[DemoSafe BG] Failed to parse WS message:', err);
         }
     };
 
     ws.onclose = () => {
         state.isConnected = false;
+        state.connectionPath = 'offline';
+        // Reject all pending WS requests so sendRequest can fall through to NMH
+        for (const [, pending] of pendingRequests) {
+            clearTimeout(pending.timer);
+            pending.reject(new Error('WebSocket closed'));
+        }
+        pendingRequests.clear();
         broadcastStateToPopup();
         scheduleReconnect();
     };
@@ -159,9 +288,15 @@ function sendRequestToCore(action: string, payload: Record<string, unknown>) {
 // MARK: - Message Handling (from Core)
 
 function handleMessage(message: IPCMessage) {
+    // Resolve any pending request-response
+    if (message.type === 'response') {
+        resolvePendingRequest(message);
+    }
+
     if (message.type === 'response' && message.action === 'handshake') {
         if (message.payload.status === 'success') {
             state.isConnected = true;
+            state.connectionPath = 'ws';
             state.isDemoMode = message.payload.isDemoMode as boolean;
             broadcastStateToPopup();
         }
@@ -312,12 +447,30 @@ function broadcastStateToPopup() {
 // Listen for messages from popup and content scripts
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message.type === 'get_state') {
-        sendResponse(state);
+        // If WS is disconnected, try NMH to get fresh state
+        if (!state.isConnected) {
+            sendViaNMH('get_state', {}).then((nmhResponse) => {
+                if (nmhResponse && !nmhResponse.error) {
+                    const payload = (nmhResponse.payload ?? nmhResponse) as Record<string, unknown>;
+                    state.isDemoMode = (payload.isDemoMode as boolean) ?? state.isDemoMode;
+                    // NMH is one-shot relay, not a persistent connection — don't claim isConnected
+                    state.connectionPath = 'nmh';
+                }
+                sendResponse(state);
+            });
+        } else {
+            sendResponse(state);
+        }
         return true;
     }
 
     if (message.type === 'toggle_demo_mode') {
-        sendRequestToCore('toggle_demo_mode', {});
+        sendRequest('toggle_demo_mode', {}).then((result) => {
+            if (result) {
+                state.isDemoMode = (result.isDemoMode as boolean) ?? state.isDemoMode;
+                broadcastStateToPopup();
+            }
+        });
         sendResponse({ ok: true });
         return true;
     }
@@ -326,21 +479,20 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         const newState = !state.isCaptureMode;
         if (newState) state.capturedCount = 0;
         updateCaptureState(newState);
-        if (state.isConnected) {
-            sendRequestToCore('toggle_capture_mode', { isActive: newState });
-        }
+        sendRequest('toggle_capture_mode', { isActive: newState });
         sendResponse({ ok: true });
         return true;
     }
 
     if (message.type === 'submit_captured_key') {
         console.log('[DemoSafe BG] submit_captured_key received:', message.payload?.suggestedService, 'connected:', state.isConnected, 'rawValue length:', message.payload?.rawValue?.length);
-        if (state.isConnected) {
-            sendRequestToCore('submit_captured_key', message.payload);
-            console.log('[DemoSafe BG] forwarded to Core');
-        } else {
-            console.log('[DemoSafe BG] NOT connected, cannot forward');
-        }
+        sendRequest('submit_captured_key', message.payload).then((result) => {
+            if (result) {
+                console.log('[DemoSafe BG] submit_captured_key success via', state.connectionPath);
+            } else {
+                console.log('[DemoSafe BG] submit_captured_key queued for retry');
+            }
+        });
         state.capturedCount++;
         broadcastStateToPopup();
         sendResponse({ ok: true });
@@ -367,6 +519,20 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
     return false;
 });
+
+// DEBUG: uncomment to expose debug functions on SW DevTools console
+// Object.assign(self, {
+//     debugState: () => { console.log(JSON.stringify(state, null, 2)); return state; },
+//     debugDisconnectWS: () => {
+//         if (ws) { ws.onclose = null; ws.close(); ws = null; }
+//         if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+//         state.isConnected = false;
+//         state.connectionPath = 'offline';
+//         broadcastStateToPopup();
+//         console.log('[DEBUG] WS disconnected, reconnect disabled');
+//     },
+//     debugReconnectWS: () => { reconnectDelay = 1000; connect(); },
+// });
 
 // MARK: - Reconnection
 

@@ -36,7 +36,7 @@ All messages follow a JSON envelope structure:
 
 | Action | Payload | Response |
 |--------|---------|----------|
-| `handshake` | `clientType`, `token`, `version` | port, pid, patternCache version, connection status |
+| `handshake` | `clientType` (`vscode` / `chrome` / `accessibility` / `nmh`), `token`, `version` | port, pid, patternCache version, connection status |
 | `get_state` | (none) | isDemoMode, activeContext, patternCache, version |
 | `request_paste` | `keyId` | status (`success` \| `denied` \| `offline`) |
 | `request_paste_group` | `groupId`, `fieldIndex` (optional) | status, groupId |
@@ -159,6 +159,19 @@ Core maintains a `patternCacheVersion` that increments with each pattern change.
 
 ---
 
+## NMH Relay (Native Messaging Host Short-lived Connection)
+
+clientType `"nmh"` is used by Chrome Native Messaging Host to relay requests via short-lived WS connections.
+
+| Characteristic | Description |
+|----------------|-------------|
+| Connection lifecycle | connect → handshake → 1 request → 1 response → close (~20-60ms) |
+| Supported actions | `get_state`, `submit_captured_key`, `toggle_demo_mode` |
+| Broadcast exclusion | Core automatically skips `.nmh` clients when broadcasting events |
+| Use case | Fallback path when Chrome Extension WS is disconnected |
+
+---
+
 ## Security Constraints
 
 | Rule | Description |
@@ -166,4 +179,5 @@ Core maintains a `patternCacheVersion` that increments with each pattern change.
 | WebSocket on 127.0.0.1 only | Binding to external interfaces is prohibited |
 | Handshake authentication | Token from `ipc.json` is required |
 | **Plaintext never traverses IPC** | Only masked representations and references flow over the network |
+| **Plaintext not stored in chrome.storage** | submit_captured_key failures are not queued — security red line |
 | `ipc.json` permissions 600 | User read/write only |

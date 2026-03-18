@@ -27,7 +27,7 @@ export type RequestAction =
     | 'resolve_mask';
 
 export interface HandshakePayload {
-    clientType: 'vscode' | 'chrome' | 'accessibility';
+    clientType: 'vscode' | 'chrome' | 'accessibility' | 'nmh';
     token: string;
     version: string;
 }

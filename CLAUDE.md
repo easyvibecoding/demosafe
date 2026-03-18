@@ -87,6 +87,10 @@ These are absolute rules — never violate them:
 - **React SPA input masking**: For dialog inputs in React/Vue SPAs, do NOT set `visibility: visible` after masking — the framework overwrites `input.value` but keeps our inline styles, exposing plaintext. Instead, keep inputs hidden by manifest CSS.
 - **AWS dual-key capture**: AWS has Access Key ID (`AKIA...`, DOM scan) + Secret Access Key (no prefix, 40-char base64, clipboard-only capture via `isAwsConsolePage()` in `handleClipboardText()`).
 - **Toast stacking**: Multiple consecutive captures show stacked toasts (each calculates top offset from existing toasts) instead of replacing the previous one.
+- **NMH dual-path IPC**: NativeMessagingHost supports both `get_config` (direct ipc.json read) and WS relay (`get_state`, `submit_captured_key`, `toggle_demo_mode`). WS relay uses `URLSessionWebSocketTask` short-lived connection (~20-60ms). clientType `"nmh"` — Core skips NMH in broadcast. `sendRequest()` in service-worker.ts tries WS first, then NMH fallback.
+- **NMH no plaintext queue**: When both WS and NMH fail for `submit_captured_key`, the key is NOT queued to `chrome.storage.local`. Storing plaintext API keys in browser storage violates security red line #1. The key is lost and must be re-captured.
+- **NMH isConnected semantics**: NMH relay success does NOT set `state.isConnected = true` — NMH is a one-shot relay, not a persistent connection. Popup shows "Connected (NMH)" via `connectionPath` field only, while WS reconnect continues independently.
+- **NMHInstaller**: Core auto-installs NMH binary + Chrome manifest from app bundle Resources on startup. Uses binary file size comparison for version checking. `install.sh` retained as manual fallback.
 
 ## Documentation
 

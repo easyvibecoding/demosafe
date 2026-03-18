@@ -1,6 +1,6 @@
 # 實作狀態追蹤
 
-> 最後更新：2026-03-17
+> 最後更新：2026-03-18
 
 ## 狀態圖例
 
@@ -19,7 +19,7 @@
 | KeychainService | ✅ | store / retrieve / delete 完成 |
 | ClipboardEngine | ✅ | copy + autoClear + detectKeys 完成 |
 | MaskingCoordinator | ✅ | isDemoMode / activeContext / pattern 匹配完成 |
-| IPCServer (WebSocket) | ✅ | handshake / state_changed / pattern_cache_sync / toggle_demo_mode |
+| IPCServer (WebSocket) | ✅ | handshake / state_changed / pattern_cache_sync / toggle_demo_mode / nmh clientType |
 | HotkeyManager | ✅ | `⌃⌥⌘D` toggle、`⌃⌥Space` hold 偵測、`⌃⌥[1-9]` paste、flagsChanged 監聽 |
 | Floating Toolbox (HUD) | ✅ | NSPanel 浮動視窗、hold-to-search、Scheme B 鎖定、↑↓ 導航 |
 | ToolboxState (ViewModel) | ✅ | 搜尋過濾、選取狀態、release/confirm/dismiss 邏輯 |
@@ -67,14 +67,16 @@
 
 | 功能 | 狀態 | 備註 |
 |------|------|------|
-| Background Service Worker | ✅ | WebSocket 連線、state 管理、reconnect |
-| Popup UI | ✅ | 連線狀態、Demo Mode、Context、Patterns |
+| Background Service Worker | ✅ | WebSocket 連線、NMH fallback 雙路分派、state 管理、reconnect |
+| Popup UI | ✅ | 連線狀態（WebSocket/NMH/Offline）、Demo Mode、Context、Patterns |
 | Toggle Demo Mode | ✅ | Popup → Background → Core → broadcast |
 | Content Script DOM masking | ✅ | TreeWalker + CSS overlay + MutationObserver |
 | Content Script unmask | ✅ | 退出 Demo Mode 恢復原始文字 |
 | Options 頁面 | ✅ | Pattern cache 管理 + Dev IPC Config |
 | Dev IPC Config (workaround) | ✅ | 替代 Native Messaging Host |
-| Native Messaging Host | ❌ | Swift binary 未編譯部署 |
+| Native Messaging Host | ✅ | get_config + WS relay（get_state / submit_captured_key / toggle_demo_mode） |
+| NMH 雙路 IPC | ✅ | WS primary + NMH fallback，popup 顯示連線路徑 |
+| NMHInstaller（Core 自動安裝） | ✅ | Core 啟動時從 bundle Resources 安裝 binary + manifest |
 | Active Key Capture | ✅ | 4 層偵測：DOM scan → attribute → clipboard → platform selectors |
 | capture-patterns.ts (SSoT) | ✅ | 11 平台 pattern 定義，單一檔案維護 |
 | Pre-hide anti-flash | ✅ | 三層：manifest CSS → pre-hide.ts → instant MutationObserver |

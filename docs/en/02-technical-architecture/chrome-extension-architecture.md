@@ -1,7 +1,7 @@
 # Chrome Extension Architecture
 
-> Status: ✅ Core features completed (WebSocket connection, Content Script masking, Popup UI)
-> Not yet completed: Native Messaging Host deployment, Smart Extract
+> Status: ✅ Core features completed (WebSocket connection, NMH dual-path IPC, Content Script masking, Popup UI)
+> Not yet completed: Smart Extract
 
 ---
 
@@ -43,6 +43,7 @@
 **Responsibilities**:
 - Maintain WebSocket connection to Swift Core (with exponential backoff reconnection)
 - Obtain IPC connection info via Native Messaging Host
+- **Dual-path dispatch**: WS primary → NMH fallback (get_state / submit_captured_key / toggle_demo_mode)
 - Receive Core events and forward to Content Scripts
 - Respond to Popup state queries
 - Persist pattern cache to `chrome.storage.local`
@@ -52,6 +53,12 @@
 2. Establish WebSocket to `ws://127.0.0.1:{port}`
 3. Send handshake (clientType: 'chrome', token, version)
 4. Receive success → mark as connected, start receiving events
+
+**Dual-path Dispatch**:
+- `sendRequest(action, payload)` — unified entry point
+- WS connected → send via WS (with request-response correlation + 5s timeout)
+- WS disconnected + action in relay list → fallback via NMH
+- Both fail → log warning (plaintext keys are NOT queued to chrome.storage — security red line)
 
 **Dev Fallback**:
 - When Native Host is unavailable, read manually configured port/token from `chrome.storage.local`
@@ -108,11 +115,12 @@ chrome.runtime.sendMessage({ type: 'get_state' }, (response) => {
 ### Popup (`popup.ts` + `popup.html`)
 
 **Displayed Information**:
-- Connection status (green dot Connected / red dot Offline)
+- Connection status and path (green dot WebSocket / blue dot NMH / red dot Offline)
 - Mode (Normal / Demo)
 - Active Context name
 - Pattern count
 - Toggle Demo Mode button
+- Capture Mode control
 
 ### Options (`options.ts` + `options.html`)
 
@@ -126,44 +134,67 @@ chrome.runtime.sendMessage({ type: 'get_state' }, (response) => {
 
 ## Native Messaging Host
 
-### Architecture
+### Architecture (Dual-path IPC)
+
+NMH supports two modes: **config query** and **WS relay**.
 
 ```
 Chrome Extension → chrome.runtime.sendNativeMessage('com.demosafe.nmh', ...)
     ↓ stdin (4-byte length prefix + JSON)
 NativeMessagingHost (Swift binary)
-    ↓ reads ~/.demosafe/ipc.json
+    ├─ action: get_config → read ~/.demosafe/ipc.json → return {port, token}
+    └─ action: get_state / submit_captured_key / toggle_demo_mode
+         → read ipc.json for port/token
+         → open short-lived WS to Core (URLSessionWebSocketTask)
+         → handshake (clientType: "nmh") → send request → receive response → close
+         → stdout returns Core's response
     ↓ stdout (4-byte length prefix + JSON)
-Chrome Extension ← { port: 55535, token: "..." }
+Chrome Extension ← response
 ```
+
+**WS Relay Characteristics**:
+- Short-lived connection: connect → handshake → 1 request → 1 response → close (~20-60ms)
+- clientType `"nmh"`: Core skips NMH connections when broadcasting events
+- 5 second timeout, failure returns `{"error": "core_unreachable" | "auth_failed" | "timeout"}`
+- Automatically skips event messages pushed by Core after handshake (e.g., pattern_cache_sync)
+
+### Supported Actions
+
+| Action | Mode | Description |
+|--------|------|-------------|
+| `get_config` | Direct ipc.json read | Returns `{port, token}`, original behavior |
+| `get_state` | WS relay | Returns isDemoMode, activeContext, patternCacheVersion |
+| `submit_captured_key` | WS relay | Submit captured API key |
+| `toggle_demo_mode` | WS relay | Toggle Demo Mode |
 
 ### Installation Paths
 
 | File | Path |
 |------|------|
-| Swift binary | `/Applications/DemoSafe.app/Contents/Helpers/demosafe-nmh` |
+| Swift binary | `~/.demosafe/bin/demosafe-nmh` |
 | Host manifest | `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.demosafe.nmh.json` |
+
+### Auto-installation (NMHInstaller)
+
+Core automatically checks and installs NMH on startup:
+1. Check if `~/.demosafe/bin/demosafe-nmh` exists (compare binary size)
+2. Check if Chrome NMH manifest exists with correct allowed_origins
+3. Missing or version mismatch → copy binary from app bundle Resources + write manifest
+4. `install.sh` retained as manual fallback
 
 ### Host Manifest (`com.demosafe.nmh.json`)
 
 ```json
 {
     "name": "com.demosafe.nmh",
-    "description": "DemoSafe Native Messaging Host",
-    "path": "/Applications/DemoSafe.app/Contents/Helpers/demosafe-nmh",
+    "description": "DemoSafe Native Messaging Host — relay for Chrome Extension",
+    "path": "/Users/<user>/.demosafe/bin/demosafe-nmh",
     "type": "stdio",
     "allowed_origins": [
         "chrome-extension://ACTUAL_EXTENSION_ID/"
     ]
 }
 ```
-
-### Deployment Steps (not yet automated)
-
-1. Compile `native-host/NativeMessagingHost.swift` to binary
-2. Place at `/Applications/DemoSafe.app/Contents/Helpers/demosafe-nmh`
-3. Copy `com.demosafe.nmh.json` to NativeMessagingHosts directory
-4. Replace `EXTENSION_ID_HERE` with actual Chrome Extension ID
 
 ---
 

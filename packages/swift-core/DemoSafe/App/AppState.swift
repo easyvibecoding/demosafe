@@ -64,6 +64,9 @@ final class AppState: ObservableObject {
         // Wire hotkey callbacks
         wireHotkeyCallbacks()
 
+        // Install NMH (Chrome Native Messaging Host) if bundled
+        NMHInstaller.installIfNeeded(extensionId: "cockodmaleagghfbaookajpcpnbdjocj")
+
         // Start IPC Server
         do {
             let port = try ipcServer.start()

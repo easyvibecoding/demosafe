@@ -1,6 +1,6 @@
 # Implementation Status Tracking
 
-> Last updated: 2026-03-17
+> Last updated: 2026-03-18
 
 ## Status Legend
 
@@ -19,7 +19,7 @@
 | KeychainService | ✅ | store / retrieve / delete completed |
 | ClipboardEngine | ✅ | copy + autoClear + detectKeys completed |
 | MaskingCoordinator | ✅ | isDemoMode / activeContext / pattern matching completed |
-| IPCServer (WebSocket) | ✅ | handshake / state_changed / pattern_cache_sync / toggle_demo_mode |
+| IPCServer (WebSocket) | ✅ | handshake / state_changed / pattern_cache_sync / toggle_demo_mode / nmh clientType |
 | HotkeyManager | ✅ | `⌃⌥⌘D` toggle, `⌃⌥Space` hold detection, `⌃⌥[1-9]` paste, flagsChanged listener |
 | Floating Toolbox (HUD) | ✅ | NSPanel floating window, hold-to-search, Scheme B lock, ↑↓ navigation |
 | ToolboxState (ViewModel) | ✅ | Search filtering, selection state, release/confirm/dismiss logic |
@@ -67,14 +67,16 @@
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Background Service Worker | ✅ | WebSocket connection, state management, reconnect |
-| Popup UI | ✅ | Connection status, Demo Mode, Context, Patterns |
+| Background Service Worker | ✅ | WebSocket connection, NMH fallback dual-path dispatch, state management, reconnect |
+| Popup UI | ✅ | Connection status (WebSocket/NMH/Offline), Demo Mode, Context, Patterns |
 | Toggle Demo Mode | ✅ | Popup → Background → Core → broadcast |
 | Content Script DOM masking | ✅ | TreeWalker + CSS overlay + MutationObserver |
 | Content Script unmask | ✅ | Restore original text when exiting Demo Mode |
 | Options page | ✅ | Pattern cache management + Dev IPC Config |
 | Dev IPC Config (workaround) | ✅ | Alternative to Native Messaging Host |
-| Native Messaging Host | ❌ | Swift binary not compiled/deployed |
+| Native Messaging Host | ✅ | get_config + WS relay (get_state / submit_captured_key / toggle_demo_mode) |
+| Dual-path IPC (NMH fallback) | ✅ | WS primary + NMH fallback, popup shows connection path |
+| NMHInstaller (Core auto-install) | ✅ | Core installs binary + manifest from bundle Resources on startup |
 | Active Key Capture | ✅ | 4-layer detection: DOM scan → attribute → clipboard → platform selectors |
 | capture-patterns.ts (SSoT) | ✅ | 11 platform pattern definitions, single file maintenance |
 | Pre-hide anti-flash | ✅ | 3 layers: manifest CSS → pre-hide.ts → instant MutationObserver |

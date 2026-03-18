@@ -10,7 +10,14 @@ interface DemoSafeState {
     isCaptureMode: boolean;
     captureTimeoutEnd: number | null;
     capturedCount: number;
+    connectionPath: 'ws' | 'nmh' | 'offline';
 }
+
+const CONNECTION_LABELS: Record<DemoSafeState['connectionPath'], string> = {
+    ws: 'Connected (WebSocket)',
+    nmh: 'Connected (NMH)',
+    offline: 'Offline',
+};
 
 let countdownInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -28,13 +35,18 @@ function updateUI(state: DemoSafeState) {
     const captureDot = document.getElementById('captureDot')!;
     const captureBtn = document.getElementById('toggleCapture')!;
 
-    // Connection
-    if (state.isConnected) {
+    // Connection — show path info (NMH is one-shot relay, shown as reachable but not persistent)
+    const path = state.connectionPath ?? (state.isConnected ? 'ws' : 'offline');
+    const isReachable = state.isConnected || path === 'nmh';
+    if (path === 'nmh') {
+        connectionDot.className = 'dot nmh';
+        connectionText.textContent = CONNECTION_LABELS.nmh;
+    } else if (state.isConnected) {
         connectionDot.className = 'dot connected';
-        connectionText.textContent = 'Connected';
+        connectionText.textContent = CONNECTION_LABELS.ws;
     } else {
         connectionDot.className = 'dot offline';
-        connectionText.textContent = 'Offline';
+        connectionText.textContent = CONNECTION_LABELS.offline;
     }
 
     // Mode
@@ -56,8 +68,8 @@ function updateUI(state: DemoSafeState) {
     // Patterns
     patternCount.textContent = String(state.patternCount);
 
-    // Capture mode — only show when connected
-    if (state.isConnected) {
+    // Capture mode — show when reachable (WS or NMH)
+    if (isReachable) {
         captureRow.style.display = '';
         captureBtn.style.display = '';
 

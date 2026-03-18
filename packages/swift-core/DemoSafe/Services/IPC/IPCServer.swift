@@ -27,6 +27,7 @@ final class IPCServer {
         case vscode
         case chrome
         case accessibility
+        case nmh
     }
 
     struct ClientInfo: Identifiable {
@@ -122,7 +123,8 @@ final class IPCServer {
         if let type = clientType {
             targets = connections.values.filter { $0.clientType == type && $0.isAuthenticated }
         } else {
-            targets = connections.values.filter { $0.isAuthenticated }
+            // Skip .nmh clients — they are short-lived relay connections, not event subscribers
+            targets = connections.values.filter { $0.isAuthenticated && $0.clientType != .nmh }
         }
 
         guard let data = encodeEvent(event) else { return }
