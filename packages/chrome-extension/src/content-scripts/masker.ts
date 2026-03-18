@@ -15,6 +15,7 @@ import {
     getPlatformSelectors,
     getWatchSelectors,
     getPreHideCSS,
+    getPatternRegexSource,
     DOMAIN_SERVICE_MAP,
     type CaptureMatch,
 } from './capture-patterns';
@@ -748,6 +749,65 @@ function isAwsConsolePage(hostname: string): boolean {
         hostname.endsWith('.console.aws.amazon.com');
 }
 
+/**
+ * Auto-click the Secret Access Key copy button on AWS key creation result page.
+ * The container has 2 copy buttons: [0] = Access Key ID, [1] = Secret Access Key.
+ * Clicking triggers clipboard.writeText → clipboard-patch.ts → handleClipboardText.
+ */
+function autoClickAwsSecretKeyCopy() {
+    setTimeout(() => {
+        const container = document.querySelector('.create-root-access-key-container');
+        if (!container) return;
+        const copyButtons = container.querySelectorAll<HTMLButtonElement>('button[data-testid="copy-button"]');
+        if (copyButtons.length >= 2) {
+            copyButtons[1].click();
+        }
+    }, 500);
+}
+
+/**
+ * AI Studio: auto-click the copy button for the most recently created key.
+ * After key creation, AI Studio closes the dialog and returns to the list.
+ * The list only shows truncated keys — full key is only available via the copy button
+ * which uses navigator.clipboard.writeText (intercepted by clipboard-patch.ts).
+ */
+let aiStudioKeyCount = -1;
+
+function isAiStudioKeyPage(): boolean {
+    return window.location.hostname === 'aistudio.google.com' &&
+        window.location.pathname.startsWith('/api-keys');
+}
+
+function initAiStudioWatcher() {
+    if (!isAiStudioKeyPage()) return;
+    // Snapshot baseline after page fully settles
+    setTimeout(() => {
+        const btns = document.querySelectorAll<HTMLButtonElement>('button.xap-copy-to-clipboard');
+        aiStudioKeyCount = btns.length;
+    }, 5000);
+}
+
+function watchAiStudioKeyCreation() {
+    if (!isAiStudioKeyPage()) return;
+    if (!shouldAutoCapture()) return;
+    if (aiStudioKeyCount === -1) return; // Not initialized yet
+
+    const currentCount = document.querySelectorAll<HTMLButtonElement>('button.xap-copy-to-clipboard').length;
+
+    // Ignore transient count=0 during Angular re-render (delete/navigation)
+    if (currentCount === 0) return;
+
+    const prevCount = aiStudioKeyCount;
+    aiStudioKeyCount = currentCount;
+
+    if (currentCount > prevCount) {
+        setTimeout(() => {
+            const btn = document.querySelector<HTMLButtonElement>('button.xap-copy-to-clipboard');
+            if (btn) btn.click();
+        }, 500);
+    }
+}
+
 // Listen for clipboard writeText events from clipboard-patch.ts (MAIN world)
 let clipboardListenerActive = false;
 
@@ -775,19 +835,10 @@ function generateMaskedPreview(rawValue: string): string {
     return rawValue.length > 12 ? rawValue.slice(0, 8) + '****...' : '****...****';
 }
 
-function isAlreadyStoredKey(value: string): boolean {
-    for (const [, regex] of compiledPatterns) {
-        regex.lastIndex = 0;
-        if (regex.test(value)) return true;
-    }
-    return false;
-}
-
 function submitCapturedKey(match: CaptureMatch) {
     const trimmedValue = match.rawValue.trim();
     if (submittedKeys.has(trimmedValue)) return;
     if (rejectedKeys.has(trimmedValue)) return;
-    if (isAlreadyStoredKey(trimmedValue)) return;
     submittedKeys.add(trimmedValue);
     match.rawValue = trimmedValue;
 
@@ -803,12 +854,18 @@ function submitCapturedKey(match: CaptureMatch) {
                 sourceURL: window.location.href,
                 confidence: match.confidence,
                 captureMethod: match.captureMethod,
+                pattern: getPatternRegexSource(match.patternId),
             },
         }).catch(() => {});
         if (isDemoMode) {
             immediatelyMaskValue(trimmedValue, match.serviceName, preview);
         }
         showToast(match.serviceName, preview);
+
+        // AWS dual-key: after Access Key ID is captured, auto-click Secret Key copy button
+        if (match.patternId === 'aws-access-key') {
+            autoClickAwsSecretKeyCopy();
+        }
 
     } else if (match.confidence >= CONFIDENCE_MIN) {
         // Medium confidence — mask first (prevent leak), then show confirmation
@@ -874,6 +931,7 @@ function showConfirmationDialog(match: CaptureMatch, preview: string) {
                 suggestedService: serviceInput.value.trim() || match.serviceName,
                 sourceURL: window.location.href,
                 captureMethod: match.captureMethod,
+                pattern: getPatternRegexSource(match.patternId),
             },
         }).catch(() => {});
         closeDialog(false);
@@ -1124,6 +1182,7 @@ function startObserver() {
             debouncedScan();
             if (shouldAutoCapture()) {
                 debouncedCaptureScan();
+                watchAiStudioKeyCreation();
             }
         }
     });
@@ -1138,6 +1197,7 @@ function startObserver() {
 // MARK: - Bootstrap
 
 startObserver();
+initAiStudioWatcher();
 
 // Request current state from background on load
 chrome.runtime.sendMessage({ type: 'get_state' }, (response) => {

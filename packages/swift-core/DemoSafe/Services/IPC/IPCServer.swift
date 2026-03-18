@@ -426,18 +426,37 @@ final class IPCServer {
                 return
             }
 
+            // Deduplicate: check if this exact key value already exists in Keychain
+            if let existing = self.vaultManager.isDuplicateKey(serviceId: svc.id, value: valueData) {
+                ipcLogger.warning("submit_captured_key: duplicate key, skipping store")
+                let response: [String: Any] = [
+                    "id": messageId, "type": "response", "action": "submit_captured_key",
+                    "payload": ["status": "duplicate", "label": existing.label, "serviceName": suggestedService],
+                    "timestamp": ISO8601DateFormatter().string(from: Date()),
+                ]
+                self.sendJSON(response, clientId: clientId)
+                return
+            }
+
             // Generate a simple label from service + timestamp
             let label = "\(suggestedService.lowercased())-\(Int(Date().timeIntervalSince1970) % 100000)"
 
-            // Generate a regex pattern that matches this specific key
-            let escapedValue = NSRegularExpression.escapedPattern(for: rawValue)
+            // Use structural pattern from Extension (e.g. "sk-proj-[A-Za-z0-9_-]{20,}")
+            // Never store the literal key value as pattern — that would leak plaintext via IPC broadcast
+            let structuralPattern: String
+            if let extensionPattern = payload["pattern"] as? String, !extensionPattern.isEmpty {
+                structuralPattern = extensionPattern
+            } else {
+                // Fallback: derive pattern from key structure (prefix + char class + length)
+                structuralPattern = Self.deriveStructuralPattern(from: rawValue)
+            }
 
             do {
-                ipcLogger.warning("storing key: label=\(label) patternLen=\(escapedValue.count)")
+                ipcLogger.warning("storing key: label=\(label) patternLen=\(structuralPattern.count)")
                 _ = try self.vaultManager.addKey(
                     label: label,
                     serviceId: svc.id,
-                    pattern: escapedValue,
+                    pattern: structuralPattern,
                     maskFormat: svc.defaultMaskFormat,
                     value: valueData
                 )
@@ -583,6 +602,67 @@ final class IPCServer {
         }
 
         return try? JSONSerialization.data(withJSONObject: json)
+    }
+
+    // MARK: - Private — Structural Pattern Derivation
+
+    /// Derive a structural regex pattern from a raw key value.
+    /// Preserves known prefix, replaces remainder with character class + exact length.
+    /// e.g. "sk-proj-abc123XYZ" → "sk\\-proj\\-[A-Za-z0-9]{10}"
+    /// This is the fallback when the Extension does not provide a pattern.
+    static func deriveStructuralPattern(from rawValue: String) -> String {
+        let knownPrefixes = [
+            "sk-proj-", "sk-ant-api03-", "sk-ant-", "sk-or-v1-",
+            "sk-", "pk-",
+            "ghp_", "gho_", "ghu_", "ghs_", "ghr_",
+            "AKIA", "ASIA",
+            "glpat-", "glsa-",
+            "xoxb-", "xoxp-", "xoxe-",
+            "key-", "token-", "api-", "secret-", "rk-",
+            "AIza",
+        ]
+
+        var prefix = ""
+        var remainder = rawValue
+        // Match longest prefix first
+        for p in knownPrefixes.sorted(by: { $0.count > $1.count }) {
+            if rawValue.hasPrefix(p) {
+                prefix = p
+                remainder = String(rawValue.dropFirst(p.count))
+                break
+            }
+        }
+
+        let escapedPrefix = NSRegularExpression.escapedPattern(for: prefix)
+        let charClass = Self.inferCharacterClass(remainder)
+        let len = remainder.count
+
+        return "\(escapedPrefix)\(charClass){\(len)}"
+    }
+
+    private static func inferCharacterClass(_ s: String) -> String {
+        let hasUpper = s.range(of: "[A-Z]", options: .regularExpression) != nil
+        let hasLower = s.range(of: "[a-z]", options: .regularExpression) != nil
+        let hasDigit = s.range(of: "[0-9]", options: .regularExpression) != nil
+        let hasUnderscore = s.contains("_")
+        let hasDash = s.contains("-")
+        let hasSlash = s.contains("/")
+        let hasPlus = s.contains("+")
+        let hasEquals = s.contains("=")
+
+        var cls = ""
+        if hasUpper { cls += "A-Z" }
+        if hasLower { cls += "a-z" }
+        if hasDigit { cls += "0-9" }
+        if hasUnderscore { cls += "_" }
+        if hasDash { cls += "\\-" }
+        if hasSlash { cls += "/" }
+        if hasPlus { cls += "\\+" }
+        if hasEquals { cls += "=" }
+
+        if cls.isEmpty { cls = "A-Za-z0-9" }
+
+        return "[\(cls)]"
     }
 
     // MARK: - Private — Token & ipc.json

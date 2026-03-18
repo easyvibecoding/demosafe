@@ -94,7 +94,8 @@ final class VaultManager {
             createdAt: now,
             updatedAt: now,
             linkedGroupId: nil,
-            sortOrder: vault.keys.filter({ $0.serviceId == serviceId }).count
+            sortOrder: vault.keys.filter({ $0.serviceId == serviceId }).count,
+            valueHash: KeyEntry.computeHash(value)
         )
 
         // Store in Keychain first
@@ -153,6 +154,12 @@ final class VaultManager {
 
     func getAllKeys() -> [KeyEntry] {
         return vault.keys
+    }
+
+    /// Check if a key value already exists by comparing SHA-256 hashes (no Keychain access).
+    func isDuplicateKey(serviceId: UUID, value: Data) -> KeyEntry? {
+        let hash = KeyEntry.computeHash(value)
+        return vault.keys.first { $0.serviceId == serviceId && $0.valueHash == hash }
     }
 
     // MARK: - LinkedGroup CRUD
