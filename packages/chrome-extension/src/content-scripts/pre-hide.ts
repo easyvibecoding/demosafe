@@ -105,3 +105,23 @@ if (document.body) {
 }
 
 (window as unknown as Record<string, unknown>).__demosafe_instant_observer = instantObserver;
+
+// === Layer 3: Turbo/SPA navigation pre-hide ===
+// GitHub uses Turbo (Hotwire) for partial page transitions.
+// Pre-hide key elements in the incoming body BEFORE it renders.
+if (css) {
+    // Extract selectors from CSS string: "sel1, sel2 { ... }" → "sel1, sel2"
+    const selectors = css.replace(/\{[^}]+\}/g, '').trim();
+    if (selectors) {
+        document.addEventListener('turbo:before-render', ((event: CustomEvent) => {
+            const newBody = event.detail?.newBody as HTMLElement | undefined;
+            if (!newBody) return;
+            try {
+                newBody.querySelectorAll(selectors).forEach(el => {
+                    (el as HTMLElement).style.setProperty('visibility', 'hidden', 'important');
+                    el.setAttribute('data-demosafe-prehidden', 'true');
+                });
+            } catch { /* invalid selector — skip */ }
+        }) as EventListener);
+    }
+}

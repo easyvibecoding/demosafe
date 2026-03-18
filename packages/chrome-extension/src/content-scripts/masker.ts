@@ -1075,7 +1075,7 @@ function showToast(serviceName: string, preview: string) {
         toast.style.opacity = '0';
         toast.style.transform = 'translateY(-8px)';
         setTimeout(() => toast.remove(), 300);
-    }, 10000);
+    }, 25000);
 }
 
 // MARK: - MutationObserver
