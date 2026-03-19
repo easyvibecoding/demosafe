@@ -158,3 +158,31 @@
 - ~~Toast stacking~~ ✅
 - ~~E2E 測試 8 平台~~ ✅
 - Stripe / Slack / SendGrid 🔶
+
+### Phase 6: 跨平台支援 🔮
+
+三層分離架構使 Extension 層（VS Code + Chrome）完全復用，僅需重寫 System Layer：
+
+```
+[VS Code Extension] ── IPC ──┐
+                             │
+[Chrome Extension] ── IPC ───┤── [System Layer]
+                             │
+System Layer = SecretStore + Demo Mode + IPC
+  ├─ macOS: Keychain + SwiftUI          ← 現有
+  ├─ Windows: Credential Manager + WinUI/WPF
+  └─ Ubuntu: libsecret + GTK/Qt
+```
+
+| 組件 | macOS (現有) | Windows | Ubuntu |
+|------|-------------|---------|--------|
+| Secret Store | Keychain | Credential Manager (DPAPI) | libsecret (GNOME Keyring) |
+| IPC Server | NWListener WebSocket | .NET/Rust WebSocket | Rust WebSocket |
+| NMH Binary | Swift CLI | .exe (C#/Rust) | ELF (Rust) |
+| System Tray | MenuBarExtra (SwiftUI) | WinUI NotifyIcon | GTK StatusIcon |
+| Hotkey | CGEvent + HotkeyManager | RegisterHotKey API | X11 XGrabKey |
+| Clipboard | NSPasteboard | Win32 Clipboard API | xclip / wl-clipboard |
+
+**不需修改的部分**：Chrome Extension、VS Code Extension、shared/ipc-protocol、capture-patterns.ts
+
+**建議策略**：System Layer 用 Rust 統一實作（跨平台編譯），GUI 薄殼用各平台原生方案。

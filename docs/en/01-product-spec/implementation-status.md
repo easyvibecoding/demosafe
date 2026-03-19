@@ -158,3 +158,31 @@ Per Spec §9 Roadmap:
 - ~~Toast stacking~~ ✅
 - ~~E2E tested 8 platforms~~ ✅
 - Stripe / Slack / SendGrid 🔶
+
+### Phase 6: Cross-Platform Support 🔮
+
+The three-layer separation allows full reuse of the Extension layer (VS Code + Chrome). Only the System Layer needs reimplementation:
+
+```
+[VS Code Extension] ── IPC ──┐
+                             │
+[Chrome Extension] ── IPC ───┤── [System Layer]
+                             │
+System Layer = SecretStore + Demo Mode + IPC
+  ├─ macOS: Keychain + SwiftUI          ← current
+  ├─ Windows: Credential Manager + WinUI/WPF
+  └─ Ubuntu: libsecret + GTK/Qt
+```
+
+| Component | macOS (current) | Windows | Ubuntu |
+|-----------|----------------|---------|--------|
+| Secret Store | Keychain | Credential Manager (DPAPI) | libsecret (GNOME Keyring) |
+| IPC Server | NWListener WebSocket | .NET/Rust WebSocket | Rust WebSocket |
+| NMH Binary | Swift CLI | .exe (C#/Rust) | ELF (Rust) |
+| System Tray | MenuBarExtra (SwiftUI) | WinUI NotifyIcon | GTK StatusIcon |
+| Hotkey | CGEvent + HotkeyManager | RegisterHotKey API | X11 XGrabKey |
+| Clipboard | NSPasteboard | Win32 Clipboard API | xclip / wl-clipboard |
+
+**No changes needed**: Chrome Extension, VS Code Extension, shared/ipc-protocol, capture-patterns.ts
+
+**Recommended strategy**: Implement System Layer in Rust for cross-compilation. Use native GUI shells per platform.
