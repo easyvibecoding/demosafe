@@ -7,7 +7,7 @@ import Carbon.HIToolbox
 /// Registered shortcuts:
 /// - ⌃⌥Space (hold): Show floating toolbox with search
 /// - ⌃⌥⌘D: Toggle demo mode
-/// - ⌃⌥[1-9]: Paste key by index
+/// - ⌃⌥⌘[1-9]: Paste key by index
 /// - ⌃⌥⌘V: Capture clipboard
 final class HotkeyManager {
     private let maskingCoordinator: MaskingCoordinator
@@ -165,8 +165,8 @@ final class HotkeyManager {
             return nil
         }
 
-        // ⌃⌥[1-9] — Paste key by index
-        if hasControl && hasOption && !hasCommand {
+        // ⌃⌥⌘[1-9] — Paste key by index
+        if hasControl && hasOption && hasCommand {
             let numberKeyCodes: [Int] = [
                 kVK_ANSI_1, kVK_ANSI_2, kVK_ANSI_3,
                 kVK_ANSI_4, kVK_ANSI_5, kVK_ANSI_6,

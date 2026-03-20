@@ -20,7 +20,7 @@
 | ClipboardEngine | ✅ | copy + autoClear + detectKeys 完成 |
 | MaskingCoordinator | ✅ | isDemoMode / activeContext / pattern 匹配完成 |
 | IPCServer (WebSocket) | ✅ | handshake / state_changed / pattern_cache_sync / toggle_demo_mode / nmh clientType |
-| HotkeyManager | ✅ | `⌃⌥⌘D` toggle、`⌃⌥Space` hold 偵測、`⌃⌥[1-9]` paste、flagsChanged 監聽 |
+| HotkeyManager | ✅ | `⌃⌥⌘D` toggle、`⌃⌥Space` hold 偵測、`⌃⌥⌘[1-9]` paste、flagsChanged 監聽 |
 | Floating Toolbox (HUD) | ✅ | NSPanel 浮動視窗、hold-to-search、Scheme B 鎖定、↑↓ 導航 |
 | ToolboxState (ViewModel) | ✅ | 搜尋過濾、選取狀態、release/confirm/dismiss 邏輯 |
 | FloatingToolboxController | ✅ | NSPanel 管理、游標定位、鎖定模式 makeKey |
@@ -33,7 +33,7 @@
 | 功能 | 對應 Spec 章節 | 優先順序 | 備註 |
 |------|--------------|---------|---------|
 | `⌃⌥⌘V` capture clipboard | Spec §4.4 | 中 | HotkeyManager 端尚未掛載 ClipboardEngine.detectKeys |
-| Linked Key Groups (sequential paste) | Spec §6.3 | 中 | `LinkedGroup`/`GroupEntry` 結構未建立 |
+| ~~Linked Key Groups (sequential paste)~~ | Spec §6.3 | ~~中~~ | ✅ `LinkedGroup`/`GroupEntry`/`SequentialPasteEngine` 完成、Settings UI 群組管理（CRUD）、`request_paste_group` IPC handler |
 | Shortcut conflict detection | Spec §4.4 | 低 | |
 | Import / Export vault | Spec §9.1 | 低 | |
 
@@ -129,7 +129,7 @@
 ### Phase 2: 剪貼簿 + 快捷鍵 ✅
 6. ~~ClipboardEngine~~ ✅
 7. ~~HotkeyManager（hold 偵測 + flagsChanged + 字元轉發）~~ ✅
-8. ~~Floating Toolbox HUD（NSPanel + hold-to-search + Scheme B 鎖定 + `⌃⌥[1-9]` paste）~~ ✅
+8. ~~Floating Toolbox HUD（NSPanel + hold-to-search + Scheme B 鎖定 + `⌃⌥⌘[1-9]` paste）~~ ✅
 
 ### Phase 3: IPC + VS Code Extension ✅
 9. ~~IPCServer~~ ✅

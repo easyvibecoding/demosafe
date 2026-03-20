@@ -12,7 +12,7 @@ Inspired by the macOS `⌘Tab` App Switcher.
 | Search/filter | Continue holding + type characters | Key list filters in real-time |
 | Quick paste (single result) | Release when only 1 result remains | Key is pasted, toolbox disappears |
 | Select from multiple results | Release → toolbox locks; use `↑↓` + `Enter` | Press Enter to paste Key, Esc to cancel |
-| Paste directly by number | Press `⌃⌥[1-9]` | Immediately paste the Nth Key, no toolbox needed |
+| Paste directly by number | Press `⌃⌥⌘[1-9]` | Immediately paste the Nth Key, no toolbox needed |
 
 ## Lock Behavior (Plan B)
 

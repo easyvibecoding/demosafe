@@ -7,7 +7,7 @@ The minimum viable product focuses on the **VS Code + Menu Bar** experience:
 - macOS Menu Bar App (Swift/SwiftUI), Keychain-based key storage
 - Demo mode toggle with visual indicator
 - Floating toolbox with hold-to-search and Scheme B lock
-- Keyboard shortcuts: `⌃⌥Space`, `⌃⌥⌘D`, `⌃⌥[1-9]`, `⌃⌥⌘V`
+- Keyboard shortcuts: `⌃⌥Space`, `⌃⌥⌘D`, `⌃⌥⌘[1-9]`, `⌃⌥⌘V`
 - VS Code Extension with Decoration API masking
 - Two-tier key hierarchy and manual key entry
 - Basic linked key groups (sequential paste)

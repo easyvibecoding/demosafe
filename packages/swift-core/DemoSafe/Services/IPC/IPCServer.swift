@@ -35,10 +35,13 @@ final class IPCServer {
         let clientType: ClientType
     }
 
-    init(maskingCoordinator: MaskingCoordinator, clipboardEngine: ClipboardEngine, vaultManager: VaultManager) {
+    private let sequentialPasteEngine: SequentialPasteEngine
+
+    init(maskingCoordinator: MaskingCoordinator, clipboardEngine: ClipboardEngine, vaultManager: VaultManager, keychainService: KeychainService) {
         self.maskingCoordinator = maskingCoordinator
         self.clipboardEngine = clipboardEngine
         self.vaultManager = vaultManager
+        self.sequentialPasteEngine = SequentialPasteEngine(clipboardEngine: clipboardEngine, keychainService: keychainService)
         let home = FileManager.default.homeDirectoryForCurrentUser
         self.ipcDir = home.appendingPathComponent(".demosafe")
         self.ipcFileURL = ipcDir.appendingPathComponent("ipc.json")
@@ -230,6 +233,8 @@ final class IPCServer {
             handleSubmitCapturedKey(messageId: messageId, payload: payload, clientId: clientId)
         case "toggle_capture_mode":
             handleToggleCaptureMode(messageId: messageId, payload: payload, clientId: clientId)
+        case "request_paste_group":
+            handleRequestPasteGroup(messageId: messageId, payload: payload, clientId: clientId)
         default:
             sendError(messageId: messageId, action: action, code: "INVALID_PAYLOAD", message: "Unknown action: \(action)", clientId: clientId)
         }
@@ -517,6 +522,82 @@ final class IPCServer {
             "timestamp": ISO8601DateFormatter().string(from: Date()),
         ]
         sendJSON(response, clientId: clientId)
+    }
+
+    private func handleRequestPasteGroup(messageId: String, payload: [String: Any], clientId: UUID) {
+        guard connections[clientId]?.isAuthenticated == true else {
+            sendError(messageId: messageId, action: "request_paste_group", code: "AUTH_FAILED", message: "Not authenticated", clientId: clientId)
+            return
+        }
+
+        guard let groupIdStr = payload["groupId"] as? String,
+              let groupId = UUID(uuidString: groupIdStr) else {
+            sendError(messageId: messageId, action: "request_paste_group", code: "INVALID_PAYLOAD", message: "Missing or invalid groupId", clientId: clientId)
+            return
+        }
+
+        guard let group = vaultManager.getLinkedGroup(groupId: groupId) else {
+            sendError(messageId: messageId, action: "request_paste_group", code: "GROUP_NOT_FOUND", message: "Group not found: \(groupId)", clientId: clientId)
+            return
+        }
+
+        let fieldIndex = payload["fieldIndex"] as? Int
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+
+            if let fieldIndex = fieldIndex {
+                // SelectField mode: paste single field
+                do {
+                    try self.sequentialPasteEngine.pasteField(group, fieldIndex: fieldIndex, autoClearSeconds: nil)
+                    let response: [String: Any] = [
+                        "id": messageId,
+                        "type": "response",
+                        "action": "request_paste_group",
+                        "payload": ["status": "success", "groupId": groupId.uuidString, "fieldIndex": fieldIndex],
+                        "timestamp": ISO8601DateFormatter().string(from: Date()),
+                    ]
+                    self.sendJSON(response, clientId: clientId)
+                } catch {
+                    self.sendError(messageId: messageId, action: "request_paste_group", code: "KEYCHAIN_ERROR", message: error.localizedDescription, clientId: clientId)
+                }
+            } else {
+                // Full group paste based on pasteMode
+                switch group.pasteMode {
+                case .sequential:
+                    Task {
+                        do {
+                            try await self.sequentialPasteEngine.pasteGroupSequentially(group, autoClearSeconds: nil)
+                            let response: [String: Any] = [
+                                "id": messageId,
+                                "type": "response",
+                                "action": "request_paste_group",
+                                "payload": ["status": "success", "groupId": groupId.uuidString],
+                                "timestamp": ISO8601DateFormatter().string(from: Date()),
+                            ]
+                            self.sendJSON(response, clientId: clientId)
+                        } catch {
+                            self.sendError(messageId: messageId, action: "request_paste_group", code: "KEYCHAIN_ERROR", message: error.localizedDescription, clientId: clientId)
+                        }
+                    }
+                case .selectField:
+                    // SelectField without fieldIndex: paste first entry as fallback
+                    do {
+                        try self.sequentialPasteEngine.pasteField(group, fieldIndex: 0, autoClearSeconds: nil)
+                        let response: [String: Any] = [
+                            "id": messageId,
+                            "type": "response",
+                            "action": "request_paste_group",
+                            "payload": ["status": "success", "groupId": groupId.uuidString, "fieldIndex": 0],
+                            "timestamp": ISO8601DateFormatter().string(from: Date()),
+                        ]
+                        self.sendJSON(response, clientId: clientId)
+                    } catch {
+                        self.sendError(messageId: messageId, action: "request_paste_group", code: "KEYCHAIN_ERROR", message: error.localizedDescription, clientId: clientId)
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - Private — Sending

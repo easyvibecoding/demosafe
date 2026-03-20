@@ -18,6 +18,7 @@ final class AppState: ObservableObject {
     let maskingCoordinator: MaskingCoordinator
     let hotkeyManager: HotkeyManager
     let ipcServer: IPCServer
+    let sequentialPasteEngine: SequentialPasteEngine
     let toolboxState: ToolboxState
     let toolboxController: FloatingToolboxController
 
@@ -28,7 +29,8 @@ final class AppState: ObservableObject {
         self.vaultManager = VaultManager(keychainService: keychainService)
         self.maskingCoordinator = MaskingCoordinator(vaultManager: vaultManager)
         self.clipboardEngine = ClipboardEngine(keychainService: keychainService, maskingCoordinator: maskingCoordinator)
-        self.ipcServer = IPCServer(maskingCoordinator: maskingCoordinator, clipboardEngine: clipboardEngine, vaultManager: vaultManager)
+        self.sequentialPasteEngine = SequentialPasteEngine(clipboardEngine: clipboardEngine, keychainService: keychainService)
+        self.ipcServer = IPCServer(maskingCoordinator: maskingCoordinator, clipboardEngine: clipboardEngine, vaultManager: vaultManager, keychainService: keychainService)
         self.hotkeyManager = HotkeyManager(maskingCoordinator: maskingCoordinator)
         self.toolboxState = ToolboxState(vaultManager: vaultManager)
         self.toolboxController = FloatingToolboxController()
@@ -49,8 +51,6 @@ final class AppState: ObservableObject {
         if vaultManager.getAllContextModes().isEmpty {
             seedDefaultContextModes()
         }
-
-        // Test key seeding removed — Active Key Capture handles key storage via Chrome Extension.
 
         // Wire settings window controller
         SettingsWindowController.shared.setAppState(self)
@@ -180,12 +180,28 @@ final class AppState: ObservableObject {
             self?.toggleDemoMode()
         }
 
-        // Paste key by index
+        // Paste key by index (group-aware)
         hotkeyManager.onPasteKeyByIndex = { [weak self] index in
             guard let self else { return }
             let allKeys = self.vaultManager.getAllKeys()
             guard index >= 1, index <= allKeys.count else { return }
-            self.copyKey(keyId: allKeys[index - 1].id)
+            let key = allKeys[index - 1]
+
+            // If key belongs to a sequential group, paste the entire group
+            if let groupId = key.linkedGroupId,
+               let group = self.vaultManager.getLinkedGroup(groupId: groupId),
+               group.pasteMode == .sequential {
+                let autoClear = self.activeContext?.clipboardClearSeconds
+                Task {
+                    do {
+                        try await self.sequentialPasteEngine.pasteGroupSequentially(group, autoClearSeconds: autoClear)
+                    } catch {
+                        logger.error("Sequential paste failed: \(error.localizedDescription)")
+                    }
+                }
+            } else {
+                self.copyKey(keyId: key.id)
+            }
         }
     }
 

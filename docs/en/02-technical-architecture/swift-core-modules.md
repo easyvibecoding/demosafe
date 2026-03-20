@@ -125,7 +125,7 @@ Manages global keyboard shortcuts using `CGEvent.tapCreate` for system-level hot
 |--------|--------|-------------|
 | `⌃⌥Space` | `toggleToolbox()` | Show/hide floating toolbox |
 | `⌃⌥⌘D` | `toggleDemoMode()` | Toggle demo/normal mode |
-| `⌃⌥[1-9]` | `pasteKeyByIndex()` | Paste key by shortcut index |
+| `⌃⌥⌘[1-9]` | `pasteKeyByIndex()` | Paste key by shortcut index |
 | `⌃⌥⌘V` | `captureClipboard()` | Scan and save current clipboard contents |
 
 ### Hold-to-Detect Logic

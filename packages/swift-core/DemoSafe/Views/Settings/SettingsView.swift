@@ -58,23 +58,70 @@ struct KeyManagementTab: View {
     @EnvironmentObject var appState: AppState
     @State private var showingAddSheet = false
     @State private var showingAddServiceSheet = false
+    @State private var showingAddGroupSheet = false
+    @State private var editingGroup: LinkedGroup?
 
     var body: some View {
         VStack {
             List {
+                // Keys by service
                 ForEach(appState.vaultManager.getAllServices()) { service in
                     Section(service.name) {
                         ForEach(appState.vaultManager.getKeys(serviceId: service.id)) { key in
                             HStack {
                                 VStack(alignment: .leading) {
                                     Text(key.label)
-                                    Text(appState.maskingCoordinator.maskedDisplay(keyId: key.id))
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
+                                    HStack(spacing: 4) {
+                                        Text(appState.maskingCoordinator.maskedDisplay(keyId: key.id))
+                                        if let groupId = key.linkedGroupId,
+                                           let group = appState.vaultManager.getLinkedGroup(groupId: groupId) {
+                                            Text("· \(group.label)")
+                                                .foregroundColor(.accentColor)
+                                        }
+                                    }
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
                                 }
                                 Spacer()
                                 Button(role: .destructive) {
                                     try? appState.vaultManager.deleteKey(keyId: key.id)
+                                } label: {
+                                    Image(systemName: "trash")
+                                }
+                                .buttonStyle(.borderless)
+                            }
+                        }
+                    }
+                }
+
+                // Linked Groups
+                if !appState.vaultManager.vault.linkedGroups.isEmpty {
+                    Section("Linked Groups") {
+                        ForEach(appState.vaultManager.vault.linkedGroups) { group in
+                            HStack {
+                                VStack(alignment: .leading) {
+                                    HStack(spacing: 6) {
+                                        Text(group.label)
+                                        Text(group.pasteMode == .sequential ? "Sequential" : "Select Field")
+                                            .font(.caption2)
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(group.pasteMode == .sequential ? Color.blue.opacity(0.15) : Color.gray.opacity(0.15))
+                                            .cornerRadius(4)
+                                    }
+                                    Text(group.entries.map(\.fieldLabel).joined(separator: " → "))
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                Spacer()
+                                Button {
+                                    editingGroup = group
+                                } label: {
+                                    Image(systemName: "pencil")
+                                }
+                                .buttonStyle(.borderless)
+                                Button(role: .destructive) {
+                                    try? appState.vaultManager.deleteLinkedGroup(groupId: group.id)
                                 } label: {
                                     Image(systemName: "trash")
                                 }
@@ -90,6 +137,10 @@ struct KeyManagementTab: View {
                 Button("Add Service...") {
                     showingAddServiceSheet = true
                 }
+                Button("Add Group...") {
+                    showingAddGroupSheet = true
+                }
+                .disabled(appState.vaultManager.getAllKeys().count < 2)
                 Spacer()
                 Button("Add Key...") {
                     showingAddSheet = true
@@ -102,6 +153,12 @@ struct KeyManagementTab: View {
         }
         .sheet(isPresented: $showingAddServiceSheet) {
             AddServiceSheet()
+        }
+        .sheet(isPresented: $showingAddGroupSheet) {
+            AddGroupSheet()
+        }
+        .sheet(item: $editingGroup) { group in
+            EditGroupSheet(group: group)
         }
     }
 }
@@ -244,6 +301,304 @@ struct AddServiceSheet: View {
     }
 }
 
+// MARK: - Add Group Sheet
+
+struct AddGroupSheet: View {
+    @EnvironmentObject var appState: AppState
+    @Environment(\.dismiss) var dismiss
+
+    @State private var label = ""
+    @State private var pasteMode: PasteMode = .sequential
+    @State private var selectedEntries: [GroupEntryDraft] = []
+    @State private var errorMessage: String?
+
+    struct GroupEntryDraft: Identifiable {
+        let id = UUID()
+        let keyId: UUID
+        let keyLabel: String
+        let serviceName: String
+        var fieldLabel: String
+    }
+
+    /// All keys not already in a group.
+    private var availableKeys: [(KeyEntry, String)] {
+        let services = appState.vaultManager.getAllServices()
+        var result: [(KeyEntry, String)] = []
+        for service in services {
+            for key in appState.vaultManager.getKeys(serviceId: service.id) {
+                if key.linkedGroupId == nil {
+                    result.append((key, service.name))
+                }
+            }
+        }
+        return result
+    }
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("Create Linked Group")
+                .font(.headline)
+
+            Form {
+                TextField("Group Name", text: $label)
+                    .textFieldStyle(.roundedBorder)
+
+                Picker("Paste Mode", selection: $pasteMode) {
+                    Text("Sequential (Tab between fields)").tag(PasteMode.sequential)
+                    Text("Select Field (choose one)").tag(PasteMode.selectField)
+                }
+
+                Section("Select Keys (in order)") {
+                    ForEach(availableKeys, id: \.0.id) { key, serviceName in
+                        let isSelected = selectedEntries.contains(where: { $0.keyId == key.id })
+                        Button {
+                            if isSelected {
+                                selectedEntries.removeAll { $0.keyId == key.id }
+                            } else {
+                                selectedEntries.append(GroupEntryDraft(
+                                    keyId: key.id,
+                                    keyLabel: key.label,
+                                    serviceName: serviceName,
+                                    fieldLabel: key.label
+                                ))
+                            }
+                        } label: {
+                            HStack {
+                                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                                    .foregroundColor(isSelected ? .accentColor : .secondary)
+                                VStack(alignment: .leading) {
+                                    Text(key.label)
+                                    Text(serviceName)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                Spacer()
+                                if isSelected, let idx = selectedEntries.firstIndex(where: { $0.keyId == key.id }) {
+                                    Text("#\(idx + 1)")
+                                        .font(.caption)
+                                        .foregroundColor(.accentColor)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+
+                if !selectedEntries.isEmpty {
+                    Section("Field Labels") {
+                        ForEach($selectedEntries) { $entry in
+                            HStack {
+                                Text("#\(selectedEntries.firstIndex(where: { $0.id == entry.id }).map { $0 + 1 } ?? 0)")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                    .frame(width: 24)
+                                TextField("Field label", text: $entry.fieldLabel)
+                                    .textFieldStyle(.roundedBorder)
+                            }
+                        }
+                    }
+                }
+
+                if let error = errorMessage {
+                    Text(error)
+                        .foregroundColor(.red)
+                        .font(.caption)
+                }
+            }
+
+            HStack {
+                Button("Cancel") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+
+                Spacer()
+
+                Button("Create") { createGroup() }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(label.isEmpty || selectedEntries.count < 2)
+            }
+        }
+        .padding()
+        .frame(width: 450, height: 480)
+    }
+
+    private func createGroup() {
+        let entries = selectedEntries.enumerated().map { idx, draft in
+            GroupEntry(keyId: draft.keyId, fieldLabel: draft.fieldLabel, sortOrder: idx)
+        }
+
+        do {
+            let _ = try appState.vaultManager.createLinkedGroup(
+                label: label,
+                entries: entries,
+                pasteMode: pasteMode
+            )
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+}
+
+// MARK: - Edit Group Sheet
+
+struct EditGroupSheet: View {
+    @EnvironmentObject var appState: AppState
+    @Environment(\.dismiss) var dismiss
+
+    let group: LinkedGroup
+
+    @State private var label: String
+    @State private var pasteMode: PasteMode
+    @State private var selectedEntries: [AddGroupSheet.GroupEntryDraft]
+    @State private var errorMessage: String?
+
+    init(group: LinkedGroup) {
+        self.group = group
+        _label = State(initialValue: group.label)
+        _pasteMode = State(initialValue: group.pasteMode)
+        _selectedEntries = State(initialValue: group.entries
+            .sorted { $0.sortOrder < $1.sortOrder }
+            .map { AddGroupSheet.GroupEntryDraft(keyId: $0.keyId, keyLabel: "", serviceName: "", fieldLabel: $0.fieldLabel) }
+        )
+    }
+
+    /// All keys: either not in any group, or already in this group.
+    private var availableKeys: [(KeyEntry, String)] {
+        let services = appState.vaultManager.getAllServices()
+        var result: [(KeyEntry, String)] = []
+        for service in services {
+            for key in appState.vaultManager.getKeys(serviceId: service.id) {
+                if key.linkedGroupId == nil || key.linkedGroupId == group.id {
+                    result.append((key, service.name))
+                }
+            }
+        }
+        return result
+    }
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("Edit Linked Group")
+                .font(.headline)
+
+            Form {
+                TextField("Group Name", text: $label)
+                    .textFieldStyle(.roundedBorder)
+
+                Picker("Paste Mode", selection: $pasteMode) {
+                    Text("Sequential (Tab between fields)").tag(PasteMode.sequential)
+                    Text("Select Field (choose one)").tag(PasteMode.selectField)
+                }
+
+                Section("Select Keys (in order)") {
+                    ForEach(availableKeys, id: \.0.id) { key, serviceName in
+                        let isSelected = selectedEntries.contains(where: { $0.keyId == key.id })
+                        Button {
+                            if isSelected {
+                                selectedEntries.removeAll { $0.keyId == key.id }
+                            } else {
+                                selectedEntries.append(AddGroupSheet.GroupEntryDraft(
+                                    keyId: key.id,
+                                    keyLabel: key.label,
+                                    serviceName: serviceName,
+                                    fieldLabel: key.label
+                                ))
+                            }
+                        } label: {
+                            HStack {
+                                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                                    .foregroundColor(isSelected ? .accentColor : .secondary)
+                                VStack(alignment: .leading) {
+                                    Text(key.label)
+                                    Text(serviceName)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                Spacer()
+                                if isSelected, let idx = selectedEntries.firstIndex(where: { $0.keyId == key.id }) {
+                                    Text("#\(idx + 1)")
+                                        .font(.caption)
+                                        .foregroundColor(.accentColor)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+
+                if !selectedEntries.isEmpty {
+                    Section("Field Labels") {
+                        ForEach($selectedEntries) { $entry in
+                            HStack {
+                                Text("#\(selectedEntries.firstIndex(where: { $0.id == entry.id }).map { $0 + 1 } ?? 0)")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                    .frame(width: 24)
+                                TextField("Field label", text: $entry.fieldLabel)
+                                    .textFieldStyle(.roundedBorder)
+                            }
+                        }
+                    }
+                }
+
+                if let error = errorMessage {
+                    Text(error)
+                        .foregroundColor(.red)
+                        .font(.caption)
+                }
+            }
+
+            HStack {
+                Button("Cancel") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+
+                Spacer()
+
+                Button("Save") { saveGroup() }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(label.isEmpty || selectedEntries.count < 2)
+            }
+        }
+        .padding()
+        .frame(width: 450, height: 480)
+        .onAppear { populateKeyLabels() }
+    }
+
+    /// Fill in keyLabel/serviceName from vault (init only has keyId + fieldLabel).
+    private func populateKeyLabels() {
+        let services = appState.vaultManager.getAllServices()
+        for i in selectedEntries.indices {
+            if let key = appState.vaultManager.getKey(keyId: selectedEntries[i].keyId) {
+                let svcName = services.first(where: { $0.id == key.serviceId })?.name ?? ""
+                selectedEntries[i] = AddGroupSheet.GroupEntryDraft(
+                    keyId: key.id,
+                    keyLabel: key.label,
+                    serviceName: svcName,
+                    fieldLabel: selectedEntries[i].fieldLabel
+                )
+            }
+        }
+    }
+
+    private func saveGroup() {
+        let entries = selectedEntries.enumerated().map { idx, draft in
+            GroupEntry(keyId: draft.keyId, fieldLabel: draft.fieldLabel, sortOrder: idx)
+        }
+
+        do {
+            try appState.vaultManager.updateLinkedGroup(
+                groupId: group.id,
+                label: label,
+                entries: entries,
+                pasteMode: pasteMode
+            )
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+}
+
 // MARK: - Context Mode
 
 struct ContextModeTab: View {
@@ -327,7 +682,7 @@ struct ShortcutsTab: View {
             Section("Registered Shortcuts") {
                 LabeledContent("Toggle Toolbox") { Text("⌃⌥Space") }
                 LabeledContent("Toggle Demo Mode") { Text("⌃⌥⌘D") }
-                LabeledContent("Paste Key [1-9]") { Text("⌃⌥[1-9]") }
+                LabeledContent("Paste Key [1-9]") { Text("⌃⌥⌘[1-9]") }
                 LabeledContent("Capture Clipboard") { Text("⌃⌥⌘V") }
             }
         }

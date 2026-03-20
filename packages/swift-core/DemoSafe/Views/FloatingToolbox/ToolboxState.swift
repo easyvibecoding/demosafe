@@ -18,6 +18,8 @@ final class ToolboxState: ObservableObject {
         let key: KeyEntry
         let serviceName: String
         let index: Int // 1-based display index
+        let groupLabel: String?   // LinkedGroup label if key belongs to a group
+        let fieldLabel: String?   // GroupEntry fieldLabel if key belongs to a group
         var id: UUID { key.id }
     }
 
@@ -25,16 +27,33 @@ final class ToolboxState: ObservableObject {
         self.vaultManager = vaultManager
     }
 
-    /// All keys with service names, filtered by search text.
+    /// All keys with service names and group info, filtered by search text.
     var filteredKeys: [KeyItem] {
         let services = vaultManager.getAllServices()
         var items: [KeyItem] = []
         var idx = 1
 
+        // Build group lookup for efficiency
+        var groupLookup: [UUID: LinkedGroup] = [:]
+        for group in vaultManager.vault.linkedGroups {
+            groupLookup[group.id] = group
+        }
+
         for service in services {
             let keys = vaultManager.getKeys(serviceId: service.id)
             for key in keys {
-                items.append(KeyItem(key: key, serviceName: service.name, index: idx))
+                var groupLabel: String?
+                var fieldLabel: String?
+
+                if let groupId = key.linkedGroupId, let group = groupLookup[groupId] {
+                    groupLabel = group.label
+                    fieldLabel = group.entries.first(where: { $0.keyId == key.id })?.fieldLabel
+                }
+
+                items.append(KeyItem(
+                    key: key, serviceName: service.name, index: idx,
+                    groupLabel: groupLabel, fieldLabel: fieldLabel
+                ))
                 idx += 1
             }
         }
@@ -44,7 +63,9 @@ final class ToolboxState: ObservableObject {
         let query = searchText.lowercased()
         return items.filter {
             $0.key.label.lowercased().contains(query) ||
-            $0.serviceName.lowercased().contains(query)
+            $0.serviceName.lowercased().contains(query) ||
+            ($0.groupLabel?.lowercased().contains(query) ?? false) ||
+            ($0.fieldLabel?.lowercased().contains(query) ?? false)
         }
     }
 

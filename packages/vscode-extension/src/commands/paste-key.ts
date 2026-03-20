@@ -42,7 +42,7 @@ export async function pasteKeyCommand(cache: PatternCache, ipcClient: IPCClient)
 
 /**
  * Command: demosafe.pasteKeyByIndex
- * Paste key by position index (1-9), matching ⌃⌥[1-9] hotkey in Core.
+ * Paste key by position index (1-9), matching ⌃⌥⌘[1-9] hotkey in Core.
  */
 export async function pasteKeyByIndexCommand(index: number, cache: PatternCache, ipcClient: IPCClient) {
     if (!ipcClient.isConnected) return;

@@ -116,25 +116,31 @@ final class VaultManagerTests: XCTestCase {
         let key1 = try addTestKey(serviceId: service.id, label: "Key 1")
         let key2 = try addTestKey(serviceId: service.id, label: "Key 2")
 
-        let group = try sut.createLinkedGroup(label: "AWS Pair", keyIds: [key1.id, key2.id], pasteMode: .selectField)
+        let entries = [
+            GroupEntry(keyId: key1.id, fieldLabel: "Access Key ID", sortOrder: 0),
+            GroupEntry(keyId: key2.id, fieldLabel: "Secret Key", sortOrder: 1),
+        ]
+        let group = try sut.createLinkedGroup(label: "AWS Pair", entries: entries, pasteMode: .selectField)
 
         XCTAssertEqual(sut.getLinkedGroup(groupId: group.id)?.label, "AWS Pair")
-        XCTAssertEqual(sut.getLinkedGroup(groupId: group.id)?.keyIds.count, 2)
+        XCTAssertEqual(sut.getLinkedGroup(groupId: group.id)?.entries.count, 2)
         // Keys should reference the group
         XCTAssertEqual(sut.getKey(keyId: key1.id)?.linkedGroupId, group.id)
         XCTAssertEqual(sut.getKey(keyId: key2.id)?.linkedGroupId, group.id)
     }
 
     func testCreateLinkedGroup_invalidKeyIdsThrows() throws {
+        let entries = [GroupEntry(keyId: UUID(), fieldLabel: "Bad Key", sortOrder: 0)]
         XCTAssertThrowsError(
-            try sut.createLinkedGroup(label: "Bad", keyIds: [UUID()], pasteMode: .selectField)
+            try sut.createLinkedGroup(label: "Bad", entries: entries, pasteMode: .selectField)
         )
     }
 
     func testDeleteLinkedGroup_clearsKeyReferences() throws {
         let service = try addTestService()
         let key = try addTestKey(serviceId: service.id)
-        let group = try sut.createLinkedGroup(label: "Group", keyIds: [key.id], pasteMode: .selectField)
+        let entries = [GroupEntry(keyId: key.id, fieldLabel: "API Key", sortOrder: 0)]
+        let group = try sut.createLinkedGroup(label: "Group", entries: entries, pasteMode: .selectField)
 
         try sut.deleteLinkedGroup(groupId: group.id)
 
@@ -146,15 +152,49 @@ final class VaultManagerTests: XCTestCase {
         let service = try addTestService()
         let key1 = try addTestKey(serviceId: service.id, label: "Key 1")
         let key2 = try addTestKey(serviceId: service.id, label: "Key 2")
-        let group = try sut.createLinkedGroup(label: "Pair", keyIds: [key1.id, key2.id], pasteMode: .selectField)
+
+        let entries = [
+            GroupEntry(keyId: key1.id, fieldLabel: "Access Key", sortOrder: 0),
+            GroupEntry(keyId: key2.id, fieldLabel: "Secret Key", sortOrder: 1),
+        ]
+        let group = try sut.createLinkedGroup(label: "Pair", entries: entries, pasteMode: .selectField)
 
         try sut.deleteKey(keyId: key1.id)
         createdKeyIds.removeAll { $0 == key1.id }
 
         // Group should still exist with remaining key
         let updatedGroup = sut.getLinkedGroup(groupId: group.id)
-        XCTAssertEqual(updatedGroup?.keyIds.count, 1)
-        XCTAssertEqual(updatedGroup?.keyIds.first, key2.id)
+        XCTAssertEqual(updatedGroup?.entries.count, 1)
+        XCTAssertEqual(updatedGroup?.entries.first?.keyId, key2.id)
+    }
+
+    func testCreateLinkedGroup_sequential() throws {
+        let service = try addTestService()
+        let key1 = try addTestKey(serviceId: service.id, label: "Key 1")
+        let key2 = try addTestKey(serviceId: service.id, label: "Key 2")
+
+        let entries = [
+            GroupEntry(keyId: key1.id, fieldLabel: "Access Key ID", sortOrder: 0),
+            GroupEntry(keyId: key2.id, fieldLabel: "Secret Key", sortOrder: 1),
+        ]
+        let group = try sut.createLinkedGroup(label: "AWS Sequential", entries: entries, pasteMode: .sequential)
+
+        XCTAssertEqual(group.pasteMode, .sequential)
+        XCTAssertEqual(group.sortedKeyIds, [key1.id, key2.id])
+    }
+
+    func testDeleteKey_removesEmptyGroup() throws {
+        let service = try addTestService()
+        let key = try addTestKey(serviceId: service.id)
+
+        let entries = [GroupEntry(keyId: key.id, fieldLabel: "Only Key", sortOrder: 0)]
+        let group = try sut.createLinkedGroup(label: "Solo", entries: entries, pasteMode: .selectField)
+
+        try sut.deleteKey(keyId: key.id)
+        createdKeyIds.removeAll { $0 == key.id }
+
+        // Group should be auto-removed since it's now empty
+        XCTAssertNil(sut.getLinkedGroup(groupId: group.id))
     }
 
     // MARK: - ContextMode Tests

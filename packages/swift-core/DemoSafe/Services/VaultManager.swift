@@ -132,10 +132,10 @@ final class VaultManager {
 
         // Remove from any linked groups
         for i in vault.linkedGroups.indices {
-            vault.linkedGroups[i].keyIds.removeAll { $0 == keyId }
+            vault.linkedGroups[i].entries.removeAll { $0.keyId == keyId }
         }
         // Clean up empty groups
-        vault.linkedGroups.removeAll { $0.keyIds.isEmpty }
+        vault.linkedGroups.removeAll { $0.entries.isEmpty }
 
         vault.patternCacheVersion += 1
         try persist()
@@ -164,10 +164,11 @@ final class VaultManager {
 
     // MARK: - LinkedGroup CRUD
 
-    func createLinkedGroup(label: String, keyIds: [UUID], pasteMode: PasteMode) throws -> LinkedGroup {
+    func createLinkedGroup(label: String, entries: [GroupEntry], pasteMode: PasteMode) throws -> LinkedGroup {
         // Validate all keyIds exist
+        let entryKeyIds = entries.map(\.keyId)
         let existingIds = Set(vault.keys.map { $0.id })
-        let invalid = keyIds.filter { !existingIds.contains($0) }
+        let invalid = entryKeyIds.filter { !existingIds.contains($0) }
         guard invalid.isEmpty else {
             throw VaultError.invalidKeyIds(invalid)
         }
@@ -175,7 +176,7 @@ final class VaultManager {
         let group = LinkedGroup(
             id: UUID(),
             label: label,
-            keyIds: keyIds,
+            entries: entries,
             pasteMode: pasteMode,
             createdAt: Date()
         )
@@ -183,7 +184,7 @@ final class VaultManager {
         vault.linkedGroups.append(group)
 
         // Update keys with linkedGroupId
-        for keyId in keyIds {
+        for keyId in entryKeyIds {
             if let idx = vault.keys.firstIndex(where: { $0.id == keyId }) {
                 vault.keys[idx].linkedGroupId = group.id
             }
@@ -196,6 +197,44 @@ final class VaultManager {
 
     func getLinkedGroup(groupId: UUID) -> LinkedGroup? {
         return vault.linkedGroups.first { $0.id == groupId }
+    }
+
+    func updateLinkedGroup(groupId: UUID, label: String, entries: [GroupEntry], pasteMode: PasteMode) throws {
+        guard let idx = vault.linkedGroups.firstIndex(where: { $0.id == groupId }) else {
+            throw VaultError.groupNotFound(groupId)
+        }
+
+        // Validate all new keyIds exist
+        let entryKeyIds = entries.map(\.keyId)
+        let existingIds = Set(vault.keys.map { $0.id })
+        let invalid = entryKeyIds.filter { !existingIds.contains($0) }
+        guard invalid.isEmpty else {
+            throw VaultError.invalidKeyIds(invalid)
+        }
+
+        // Clear linkedGroupId on old keys that are no longer in the group
+        let oldKeyIds = Set(vault.linkedGroups[idx].entries.map(\.keyId))
+        let newKeyIds = Set(entryKeyIds)
+        for i in vault.keys.indices {
+            if oldKeyIds.contains(vault.keys[i].id) && !newKeyIds.contains(vault.keys[i].id) {
+                vault.keys[i].linkedGroupId = nil
+            }
+        }
+
+        // Update group
+        vault.linkedGroups[idx].label = label
+        vault.linkedGroups[idx].entries = entries
+        vault.linkedGroups[idx].pasteMode = pasteMode
+
+        // Set linkedGroupId on new keys
+        for keyId in entryKeyIds {
+            if let ki = vault.keys.firstIndex(where: { $0.id == keyId }) {
+                vault.keys[ki].linkedGroupId = groupId
+            }
+        }
+
+        try persist()
+        broadcastChange()
     }
 
     func deleteLinkedGroup(groupId: UUID) throws {

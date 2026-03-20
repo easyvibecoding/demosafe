@@ -125,7 +125,7 @@ DemoSafeApp (SwiftUI)
 |--------|------|------|
 | `⌃⌥Space` | `toggleToolbox()` | 顯示/隱藏浮動工具箱 |
 | `⌃⌥⌘D` | `toggleDemoMode()` | 切換展示/一般模式 |
-| `⌃⌥[1-9]` | `pasteKeyByIndex()` | 依快捷鍵索引貼上金鑰 |
+| `⌃⌥⌘[1-9]` | `pasteKeyByIndex()` | 依快捷鍵索引貼上金鑰 |
 | `⌃⌥⌘V` | `captureClipboard()` | 掃描並儲存當前剪貼簿內容 |
 
 ### 按住偵測邏輯

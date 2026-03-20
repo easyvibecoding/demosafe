@@ -97,6 +97,9 @@ These are absolute rules — never violate them:
 - **Turbo navigation pre-hide**: `turbo:before-render` listener in pre-hide.ts hides key elements in incoming body BEFORE Turbo renders. Prevents GitHub PAT flash on partial page transition.
 - **OpenAI pre-hide scope**: preHideCSS must NOT include `td.api-key-token .api-key-token-value` — these are truncated previews (sk-...QngA) that never match full patterns, causing permanent hidden state.
 - **Toast duration**: 25 seconds (changed from 10s for better visibility during demos).
+- **Sequential paste pre-fetch**: `SequentialPasteEngine` pre-fetches ALL key values from Keychain before starting the paste sequence. This ensures Keychain auth dialogs (if any) appear upfront, not between ⌘V→Tab→⌘V steps. Phase 2 writes directly to `NSPasteboard`, bypassing `ClipboardEngine.copyToClipboard`.
+- **CGEvent modifier isolation**: When simulating ⌘V followed by Tab, the Tab `CGEvent` must explicitly set `flags = []` to clear residual Command modifier. Without this, the system interprets Tab as ⌘Tab (app switcher). Use `CGEventSource(stateID: .combinedSessionState)` for isolated event sources.
+- **Paste key shortcut**: Changed from `⌃⌥[1-9]` to `⌃⌥⌘[1-9]` to avoid conflicts with system/app shortcuts. All ⌃⌥⌘ shortcuts are consistent: D (demo), V (capture), [1-9] (paste).
 
 ## Documentation
 

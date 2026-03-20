@@ -20,7 +20,7 @@
 | ClipboardEngine | ✅ | copy + autoClear + detectKeys completed |
 | MaskingCoordinator | ✅ | isDemoMode / activeContext / pattern matching completed |
 | IPCServer (WebSocket) | ✅ | handshake / state_changed / pattern_cache_sync / toggle_demo_mode / nmh clientType |
-| HotkeyManager | ✅ | `⌃⌥⌘D` toggle, `⌃⌥Space` hold detection, `⌃⌥[1-9]` paste, flagsChanged listener |
+| HotkeyManager | ✅ | `⌃⌥⌘D` toggle, `⌃⌥Space` hold detection, `⌃⌥⌘[1-9]` paste, flagsChanged listener |
 | Floating Toolbox (HUD) | ✅ | NSPanel floating window, hold-to-search, Scheme B lock, ↑↓ navigation |
 | ToolboxState (ViewModel) | ✅ | Search filtering, selection state, release/confirm/dismiss logic |
 | FloatingToolboxController | ✅ | NSPanel management, cursor positioning, locked mode makeKey |
@@ -33,7 +33,7 @@
 | Feature | Spec Section | Priority | Notes |
 |---------|-------------|----------|---------|
 | `⌃⌥⌘V` capture clipboard | Spec §4.4 | Medium | HotkeyManager not yet wired to ClipboardEngine.detectKeys |
-| Linked Key Groups (sequential paste) | Spec §6.3 | Medium | `LinkedGroup`/`GroupEntry` structs not yet created |
+| ~~Linked Key Groups (sequential paste)~~ | Spec §6.3 | ~~Medium~~ | ✅ `LinkedGroup`/`GroupEntry`/`SequentialPasteEngine` complete, Settings UI group management (CRUD), `request_paste_group` IPC handler |
 | Shortcut conflict detection | Spec §4.4 | Low | |
 | Import / Export vault | Spec §9.1 | Low | |
 
@@ -129,7 +129,7 @@ Per Spec §9 Roadmap:
 ### Phase 2: Clipboard + Hotkeys ✅
 6. ~~ClipboardEngine~~ ✅
 7. ~~HotkeyManager (hold detection + flagsChanged + keystroke forwarding)~~ ✅
-8. ~~Floating Toolbox HUD (NSPanel + hold-to-search + Scheme B lock + `⌃⌥[1-9]` paste)~~ ✅
+8. ~~Floating Toolbox HUD (NSPanel + hold-to-search + Scheme B lock + `⌃⌥⌘[1-9]` paste)~~ ✅
 
 ### Phase 3: IPC + VS Code Extension ✅
 9. ~~IPCServer~~ ✅

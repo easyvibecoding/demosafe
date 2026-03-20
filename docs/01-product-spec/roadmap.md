@@ -7,7 +7,7 @@
 - macOS Menu Bar App (Swift/SwiftUI)，Key 儲存基於 Keychain
 - 展示模式切換與視覺指示
 - 浮動工具箱，支援按住搜尋與方案 B 鎖定
-- 鍵盤快捷鍵：`⌃⌥Space`、`⌃⌥⌘D`、`⌃⌥[1-9]`、`⌃⌥⌘V`
+- 鍵盤快捷鍵：`⌃⌥Space`、`⌃⌥⌘D`、`⌃⌥⌘[1-9]`、`⌃⌥⌘V`
 - VS Code Extension，使用 Decoration API 遮蔽
 - 雙層 Key 階層與手動 Key 輸入
 - 基本關聯 Key 群組（順序貼上）

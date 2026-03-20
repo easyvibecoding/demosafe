@@ -6,7 +6,7 @@
 |--------|-----------------|------------------|
 | Toggle floating toolbox | `⌃⌥Space` | Left-hand key combination, very few conflicts with applications |
 | Toggle demo mode | `⌃⌥⌘D` | Three modifier keys to prevent accidental triggering |
-| Paste Nth Key directly | `⌃⌥[1-9]` | Fastest path when Key position is known |
+| Paste Nth Key directly | `⌃⌥⌘[1-9]` | Fastest path when Key position is known |
 | Quick extract clipboard content | `⌃⌥⌘V` | Paste + auto-parse into manager |
 
 ## Custom Settings

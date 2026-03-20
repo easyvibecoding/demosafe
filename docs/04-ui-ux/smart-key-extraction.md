@@ -136,29 +136,32 @@ struct LinkedGroup: Codable, Identifiable {
     let id: UUID
     var label: String           // 如 "AWS Production"
     var entries: [GroupEntry]    // 有序的 Key 列表
-    var pasteMode: PasteMode    // .sequential 或 .fieldSelect
+    var pasteMode: PasteMode    // .sequential 或 .selectField
+    var createdAt: Date
 }
 
 struct GroupEntry: Codable {
     let keyId: UUID
-    let fieldLabel: String      // 如 "Access Key ID"、"Secret Key"
+    var fieldLabel: String      // 如 "Access Key ID"、"Secret Key"
     var sortOrder: Int
 }
 
 enum PasteMode: String, Codable {
-    case sequential    // 按 Tab 自動依序貼入
-    case fieldSelect   // 顯示選單讓使用者選擇
+    case selectField    // 使用者選擇要貼上的欄位
+    case sequential     // 按 Tab 自動依序貼入
 }
 ```
 
 ### 順序貼上模擬
 
 ```
-使用者觸發 LinkedGroup paste（⌃⌥[N] 對應群組）
+使用者觸發 LinkedGroup paste（⌃⌥⌘[N] 對應群組）
     ↓
-1. 貼上 entries[0].value（Access Key ID）
+SequentialPasteEngine 預先從 Keychain 取出所有 key（避免中途跳認證窗）
+    ↓
+1. 寫入 entries[0].value 到剪貼簿 → 模擬 ⌘V
 2. 模擬 Tab 鍵
-3. 貼上 entries[1].value（Secret Key）
+3. 寫入 entries[1].value 到剪貼簿 → 模擬 ⌘V
     ↓
 完成，兩個欄位同時填入
 ```
