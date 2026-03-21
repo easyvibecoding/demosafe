@@ -168,8 +168,8 @@ See the [docs/](docs/) directory for detailed specifications:
 - [x] Smart Key Extraction confirmation dialog (full Chrome ↔ Swift Core IPC: detect → submit → Keychain store → pattern sync)
 - [x] Linked Key Groups (sequential paste with ⌘V→Tab automation, Settings UI CRUD, pre-fetch Keychain)
 - [x] Clipboard Capture (⌃⌥⌘V hotkey, 22 built-in patterns, 3-tier confidence routing, whitespace-tolerant)
+- [x] 🧪 Terminal masking — Shielded Terminal (node-pty proxy, DEC 2026 sync block buffering, ANSI-aware masking, Claude Code compatible)
 - [ ] API Key rotation & deployment sync
-- [ ] Terminal masking (node-pty proxy)
 - [ ] System-wide masking (Accessibility API)
 
 ## Contributing
