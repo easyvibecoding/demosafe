@@ -186,9 +186,9 @@ export function maskTerminalOutput(data: string, patterns: TerminalPattern[]): M
         // Preserve ANSI codes and line breaks within the matched range.
         // This maintains terminal layout when a key spans multiple visual lines.
         const matchedOriginal = data.slice(origStart, origEnd);
-        const structural = matchedOriginal.replace(/[^\x1b\r\n]/g, '').length > 0
-            ? extractStructural(matchedOriginal)
-            : '';
+        // eslint-disable-next-line no-control-regex
+        const hasStructural = /[\x1b\r\n]/.test(matchedOriginal);
+        const structural = hasStructural ? extractStructural(matchedOriginal) : '';
 
         result = result.slice(0, origStart) + m.mask + structural + result.slice(origEnd);
     }
@@ -204,10 +204,9 @@ export function maskTerminalOutput(data: string, patterns: TerminalPattern[]): M
  */
 function extractStructural(text: string): string {
     const parts: string[] = [];
-    // eslint-disable-next-line no-control-regex
-    const re = new RegExp(ANSI_AND_STRUCTURAL_REGEX.source, 'g');
+    ANSI_AND_STRUCTURAL_REGEX.lastIndex = 0;
     let m: RegExpExecArray | null;
-    while ((m = re.exec(text)) !== null) {
+    while ((m = ANSI_AND_STRUCTURAL_REGEX.exec(text)) !== null) {
         parts.push(m[0]);
     }
     return parts.join('');
