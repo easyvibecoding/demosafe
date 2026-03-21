@@ -100,6 +100,9 @@ These are absolute rules — never violate them:
 - **Sequential paste pre-fetch**: `SequentialPasteEngine` pre-fetches ALL key values from Keychain before starting the paste sequence. This ensures Keychain auth dialogs (if any) appear upfront, not between ⌘V→Tab→⌘V steps. Phase 2 writes directly to `NSPasteboard`, bypassing `ClipboardEngine.copyToClipboard`.
 - **CGEvent modifier isolation**: When simulating ⌘V followed by Tab, the Tab `CGEvent` must explicitly set `flags = []` to clear residual Command modifier. Without this, the system interprets Tab as ⌘Tab (app switcher). Use `CGEventSource(stateID: .combinedSessionState)` for isolated event sources.
 - **Paste key shortcut**: Changed from `⌃⌥[1-9]` to `⌃⌥⌘[1-9]` to avoid conflicts with system/app shortcuts. All ⌃⌥⌘ shortcuts are consistent: D (demo), V (capture), [1-9] (paste).
+- **Clipboard capture whitespace stripping**: `detectKeysInClipboard()` strips all whitespace and newlines from clipboard content before pattern matching (`components(separatedBy: .whitespacesAndNewlines).joined()`). API keys never contain spaces, but clipboard copy may introduce line breaks from word-wrap.
+- **Clipboard capture built-in patterns**: `ClipboardEngine.builtInCapturePatterns` contains 22 well-known API key patterns (OpenAI, Anthropic, GitHub, AWS, Google, Stripe, etc.) for detecting NEW keys not yet in the vault. This is separate from `patternCacheEntries()` which only matches stored keys.
+- **NSAlert in menu bar app**: Must call `alert.layout()` then set `alert.window.level = .floating` + `orderFrontRegardless()` before `runModal()`. Without this, the alert either doesn't appear or creates a dock icon. Do NOT use `setActivationPolicy(.regular)`.
 
 ## Documentation
 

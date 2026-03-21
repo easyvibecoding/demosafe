@@ -87,29 +87,96 @@ final class ClipboardEngine {
         }
     }
 
+    /// Well-known API key patterns for clipboard capture detection.
+    /// These detect NEW keys not yet in the vault, unlike patternCacheEntries() which only matches stored keys.
+    static let builtInCapturePatterns: [(pattern: String, service: String, confidence: Double)] = [
+        // OpenAI
+        ("sk-proj-[A-Za-z0-9_-]{20,}", "OpenAI", 0.95),
+        ("sk-ant-api03-[A-Za-z0-9_-]{20,}", "Anthropic", 0.95),
+        ("sk-ant-[A-Za-z0-9_-]{20,}", "Anthropic", 0.90),
+        // GitHub
+        ("ghp_[A-Za-z0-9]{36,}", "GitHub", 0.95),
+        ("gho_[A-Za-z0-9]{36,}", "GitHub", 0.95),
+        ("ghu_[A-Za-z0-9]{36,}", "GitHub", 0.95),
+        ("ghs_[A-Za-z0-9]{36,}", "GitHub", 0.95),
+        ("ghr_[A-Za-z0-9]{36,}", "GitHub", 0.95),
+        // GitLab
+        ("glpat-[A-Za-z0-9_-]{20,}", "GitLab", 0.90),
+        // Google Cloud
+        ("AIzaSy[A-Za-z0-9_-]{33}", "Google Cloud", 0.90),
+        // AWS
+        ("AKIA[A-Z0-9]{16}", "AWS", 0.90),
+        ("ASIA[A-Z0-9]{16}", "AWS", 0.85),
+        // Slack
+        ("xoxb-[A-Za-z0-9-]{20,}", "Slack", 0.90),
+        ("xoxp-[A-Za-z0-9-]{20,}", "Slack", 0.90),
+        // HuggingFace
+        ("hf_[A-Za-z0-9]{20,}", "HuggingFace", 0.90),
+        // Stripe
+        ("sk_live_[A-Za-z0-9]{20,}", "Stripe", 0.90),
+        ("sk_test_[A-Za-z0-9]{20,}", "Stripe", 0.85),
+        ("pk_live_[A-Za-z0-9]{20,}", "Stripe", 0.85),
+        ("pk_test_[A-Za-z0-9]{20,}", "Stripe", 0.80),
+        // SendGrid
+        ("SG\\.[A-Za-z0-9_-]{20,}", "SendGrid", 0.85),
+        // Generic (lower confidence)
+        ("sk-[A-Za-z0-9_-]{30,}", "Unknown API", 0.60),
+    ]
+
     /// Scan current clipboard content for API key patterns.
-    /// Uses MaskingCoordinator's compiled patterns for detection.
+    /// Uses both built-in capture patterns (for detecting NEW keys) and
+    /// MaskingCoordinator's cached patterns (for detecting stored keys).
     func detectKeysInClipboard() -> [DetectedKey] {
-        guard let coordinator = maskingCoordinator else { return [] }
-        guard let content = NSPasteboard.general.string(forType: .string) else { return [] }
+        guard let rawContent = NSPasteboard.general.string(forType: .string) else { return [] }
+        // Strip all whitespace and newlines — API keys never contain spaces,
+        // but clipboard content may have line breaks from word-wrap or copy artifacts
+        let content = rawContent.components(separatedBy: .whitespacesAndNewlines).joined()
 
-        let keys = coordinator.patternCacheEntries()
         var detected: [DetectedKey] = []
+        var matchedRanges: [Range<String.Index>] = []
 
-        for entry in keys {
+        // Phase 1: Built-in capture patterns (detect new keys)
+        for entry in Self.builtInCapturePatterns {
             guard let regex = try? NSRegularExpression(pattern: entry.pattern) else { continue }
             let nsRange = NSRange(content.startIndex..., in: content)
             let matches = regex.matches(in: content, range: nsRange)
 
             for match in matches {
                 guard let range = Range(match.range, in: content) else { continue }
+                // Skip overlapping matches
+                if matchedRanges.contains(where: { $0.overlaps(range) }) { continue }
+                matchedRanges.append(range)
+
                 let rawValue = String(content[range])
                 detected.append(DetectedKey(
                     rawValue: rawValue,
-                    suggestedService: entry.serviceName,
+                    suggestedService: entry.service,
                     pattern: entry.pattern,
-                    confidence: calculateConfidence(pattern: entry.pattern, match: rawValue)
+                    confidence: entry.confidence
                 ))
+            }
+        }
+
+        // Phase 2: Vault pattern cache (detect stored keys already known)
+        if let coordinator = maskingCoordinator {
+            for entry in coordinator.patternCacheEntries() {
+                guard let regex = try? NSRegularExpression(pattern: entry.pattern) else { continue }
+                let nsRange = NSRange(content.startIndex..., in: content)
+                let matches = regex.matches(in: content, range: nsRange)
+
+                for match in matches {
+                    guard let range = Range(match.range, in: content) else { continue }
+                    if matchedRanges.contains(where: { $0.overlaps(range) }) { continue }
+                    matchedRanges.append(range)
+
+                    let rawValue = String(content[range])
+                    detected.append(DetectedKey(
+                        rawValue: rawValue,
+                        suggestedService: entry.serviceName,
+                        pattern: entry.pattern,
+                        confidence: calculateConfidence(pattern: entry.pattern, match: rawValue)
+                    ))
+                }
             }
         }
 

@@ -180,6 +180,11 @@ final class AppState: ObservableObject {
             self?.toggleDemoMode()
         }
 
+        // Capture clipboard
+        hotkeyManager.onCaptureClipboard = { [weak self] in
+            self?.handleCaptureClipboard()
+        }
+
         // Paste key by index (group-aware)
         hotkeyManager.onPasteKeyByIndex = { [weak self] index in
             guard let self else { return }
@@ -203,6 +208,121 @@ final class AppState: ObservableObject {
                 self.copyKey(keyId: key.id)
             }
         }
+    }
+
+    // MARK: - Clipboard Capture
+
+    private func handleCaptureClipboard() {
+        let detected = clipboardEngine.detectKeysInClipboard()
+
+        if detected.isEmpty {
+            logger.info("Capture clipboard: no keys detected")
+            _ = showAlert(title: "No Keys Found", message: "No API key patterns detected in clipboard content.")
+            return
+        }
+
+        logger.info("Capture clipboard: found \(detected.count) key(s)")
+
+        for key in detected {
+            if key.confidence >= 0.7 {
+                // High confidence — auto-store
+                storeDetectedKey(key)
+            } else if key.confidence >= 0.35 {
+                // Medium confidence — confirm with user
+                let prefix = String(key.rawValue.prefix(8))
+                let suffix = String(key.rawValue.suffix(4))
+                let preview = "\(prefix)...\(suffix) (\(key.rawValue.count) chars)"
+
+                let response = showAlert(
+                    title: "Store Detected Key?",
+                    message: "Service: \(key.suggestedService ?? "Unknown")\nKey: \(preview)\nConfidence: \(Int(key.confidence * 100))%",
+                    buttons: ["Store", "Skip"]
+                )
+                if response == .alertFirstButtonReturn {
+                    storeDetectedKey(key)
+                } else {
+                    logger.info("Capture clipboard: user skipped key")
+                }
+            } else {
+                // Low confidence — ignore
+                logger.info("Capture clipboard: ignoring low confidence key (\(key.confidence))")
+            }
+        }
+    }
+
+    private func storeDetectedKey(_ detected: DetectedKey) {
+        let rawValue = detected.rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let serviceName = detected.suggestedService ?? "Unknown"
+
+        // Find or create service
+        var service = vaultManager.getAllServices().first(where: { $0.name == serviceName })
+        if service == nil {
+            let newService = Service(
+                id: UUID(), name: serviceName, icon: nil,
+                defaultPattern: ".*", defaultMaskFormat: .default, isBuiltIn: false
+            )
+            try? vaultManager.addService(newService)
+            service = newService
+        }
+
+        guard let svc = service, let valueData = rawValue.data(using: .utf8) else {
+            logger.error("Capture clipboard: failed to encode key value")
+            return
+        }
+
+        // Deduplicate
+        if let existing = vaultManager.isDuplicateKey(serviceId: svc.id, value: valueData) {
+            logger.info("Capture clipboard: duplicate key '\(existing.label)', skipping")
+            _ = showAlert(title: "Duplicate Key", message: "This key already exists as '\(existing.label)'.")
+            return
+        }
+
+        let label = "\(serviceName.lowercased())-\(Int(Date().timeIntervalSince1970) % 100000)"
+        let structuralPattern = IPCServer.deriveStructuralPattern(from: rawValue)
+
+        do {
+            _ = try vaultManager.addKey(
+                label: label,
+                serviceId: svc.id,
+                pattern: structuralPattern,
+                maskFormat: svc.defaultMaskFormat,
+                value: valueData
+            )
+            logger.info("Capture clipboard: stored key '\(label)'")
+            _ = showAlert(title: "Key Stored", message: "Saved as '\(label)' under \(serviceName).")
+        } catch {
+            logger.error("Capture clipboard: store failed: \(error)")
+        }
+    }
+
+    private func showAlert(title: String, message: String, buttons: [String] = ["OK"]) -> NSApplication.ModalResponse {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = message
+        alert.alertStyle = .informational
+        for button in buttons {
+            alert.addButton(withTitle: button)
+        }
+
+        // Use lock icon instead of default folder icon
+        alert.icon = NSImage(systemSymbolName: "lock.shield", accessibilityDescription: "DemoSafe")
+
+        // Pre-configure window to float above all windows
+        alert.layout()
+        alert.window.level = .floating
+
+        // Position near top-right (like system notifications)
+        if let screen = NSScreen.main {
+            let screenFrame = screen.visibleFrame
+            let alertSize = alert.window.frame.size
+            let x = screenFrame.maxX - alertSize.width - 20
+            let y = screenFrame.maxY - alertSize.height - 20
+            alert.window.setFrameOrigin(NSPoint(x: x, y: y))
+        }
+
+        alert.window.orderFrontRegardless()
+
+        return alert.runModal()
     }
 
     // MARK: - Private

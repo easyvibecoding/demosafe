@@ -32,7 +32,7 @@
 
 | 功能 | 對應 Spec 章節 | 優先順序 | 備註 |
 |------|--------------|---------|---------|
-| `⌃⌥⌘V` capture clipboard | Spec §4.4 | 中 | HotkeyManager 端尚未掛載 ClipboardEngine.detectKeys |
+| ~~`⌃⌥⌘V` capture clipboard~~ | Spec §4.4 | ~~中~~ | ✅ HotkeyManager → ClipboardEngine.detectKeysInClipboard() → 內建 22 種 pattern 偵測 → confidence 三階路由 → VaultManager 存儲 |
 | ~~Linked Key Groups (sequential paste)~~ | Spec §6.3 | ~~中~~ | ✅ `LinkedGroup`/`GroupEntry`/`SequentialPasteEngine` 完成、Settings UI 群組管理（CRUD）、`request_paste_group` IPC handler |
 | Shortcut conflict detection | Spec §4.4 | 低 | |
 | Import / Export vault | Spec §9.1 | 低 | |
