@@ -644,9 +644,25 @@ struct ContextModeTab: View {
 
 struct SecuritySettingsTab: View {
     @AppStorage("requireTouchID") private var requireTouchID = false
+    @AppStorage("systemWideMasking") private var systemWideMasking = false
+    @EnvironmentObject var appState: AppState
 
     var body: some View {
         Form {
+            Section("Demo Mode Enhancement") {
+                Toggle("System-wide masking (experimental)", isOn: $systemWideMasking)
+                    .onChange(of: systemWideMasking) { _, enabled in
+                        if enabled && appState.isDemoMode {
+                            appState.systemMaskingService.start()
+                        } else {
+                            appState.systemMaskingService.stop()
+                        }
+                    }
+                Text("When Demo Mode is active, mask API keys detected in any application using Accessibility overlay.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
             Section("Keychain") {
                 Toggle("Require Touch ID for key access", isOn: $requireTouchID)
                 Text("When enabled, Touch ID or password is required each time a key is accessed from the Keychain.")
