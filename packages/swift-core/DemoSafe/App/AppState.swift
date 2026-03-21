@@ -21,6 +21,8 @@ final class AppState: ObservableObject {
     let sequentialPasteEngine: SequentialPasteEngine
     let toolboxState: ToolboxState
     let toolboxController: FloatingToolboxController
+    let systemOverlayController: SystemOverlayController
+    let systemMaskingService: SystemMaskingService
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -34,6 +36,8 @@ final class AppState: ObservableObject {
         self.hotkeyManager = HotkeyManager(maskingCoordinator: maskingCoordinator)
         self.toolboxState = ToolboxState(vaultManager: vaultManager)
         self.toolboxController = FloatingToolboxController()
+        self.systemOverlayController = SystemOverlayController()
+        self.systemMaskingService = SystemMaskingService(maskingCoordinator: maskingCoordinator, overlayController: systemOverlayController)
 
         // Sync isDemoMode bidirectionally with MaskingCoordinator
         maskingCoordinator.$isDemoMode
@@ -85,6 +89,14 @@ final class AppState: ObservableObject {
         isDemoMode.toggle()
         maskingCoordinator.isDemoMode = isDemoMode
         maskingCoordinator.broadcastState()
+
+        // Sync system-wide masking with Demo Mode (only if enabled in settings)
+        let systemMaskingEnabled = UserDefaults.standard.bool(forKey: "systemWideMasking")
+        if isDemoMode && systemMaskingEnabled {
+            systemMaskingService.start()
+        } else {
+            systemMaskingService.stop()
+        }
     }
 
     func switchContext(contextId: UUID) {
@@ -116,18 +128,20 @@ final class AppState: ObservableObject {
     // MARK: - Private — Hotkey Wiring
 
     private func wireHotkeyCallbacks() {
-        // Toolbox show (hold start)
+        // Toolbox show (hold start) — also enables peek mode for system overlays
         hotkeyManager.onToolboxShow = { [weak self] in
             guard let self else { return }
             self.toolboxState.reset()
             self.toolboxState.isVisible = true
+            self.systemMaskingService.setPeekMode(true)
             let mouseLocation = NSEvent.mouseLocation
             self.toolboxController.show(near: mouseLocation)
         }
 
-        // Toolbox release (hold end)
+        // Toolbox release (hold end) — also disables peek mode
         hotkeyManager.onToolboxRelease = { [weak self] in
             guard let self else { return }
+            self.systemMaskingService.setPeekMode(false)
             self.toolboxState.handleRelease { [weak self] keyId in
                 self?.copyKey(keyId: keyId)
             }

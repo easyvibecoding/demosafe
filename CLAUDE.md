@@ -106,6 +106,9 @@ These are absolute rules — never violate them:
 - **Terminal masking sync block buffering** (experimental): Shielded Terminal buffers PTY output by detecting DEC 2026 sync block markers (`\x1b[?2026h`/`\x1b[?2026l`). Complete sync blocks are masked atomically. Non-sync data uses 30ms timeout buffer. This matches claude-chill's approach.
 - **Terminal masking ANSI-aware matching**: `maskTerminalOutput()` strips ANSI escape codes AND all whitespace (spaces, tabs, newlines) before regex matching. Ink word-wraps long keys with `\r\n` + indentation; stripping all whitespace allows regex to match keys across visual line breaks. Structural characters (ANSI + whitespace) within matched ranges are preserved in output via `extractStructural()`.
 - **Terminal masking node-pty loading**: Triple fallback: (1) `require('node-pty')`, (2) `require(vscode.env.appRoot + '/node_modules.asar.unpacked/node-pty')`, (3) `require(vscode.env.appRoot + '/node_modules/node-pty')`. Falls back to `child_process.spawn` line-mode terminal.
+- **System-wide masking** (experimental): Uses `AXObserver` + `kAXFocusedUIElementChangedNotification` / `kAXValueChangedNotification` to monitor focused text elements across all apps. `AXBoundsForRange` provides precise multi-line text coordinates. NSPanel overlay with `ignoresMouseEvents = true` for click-through. Settings toggle (`systemWideMasking` in UserDefaults), only active when both setting AND Demo Mode are ON.
+- **System-wide masking performance**: 10ms initial scan delay, 30ms debounce for changes, 500ms polling fallback. Actual processing 2-6ms. Immediate scan on app switch. Text cache (`lastScannedText`) prevents redundant overlay updates.
+- **System-wide masking coordinate conversion**: AX API uses top-left origin, AppKit uses bottom-left. Convert via `primaryScreenHeight - axY - height`. Multi-screen: use primary screen height as reference.
 
 ## Documentation
 

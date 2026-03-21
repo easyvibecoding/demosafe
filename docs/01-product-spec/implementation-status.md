@@ -35,6 +35,7 @@
 | ~~`⌃⌥⌘V` capture clipboard~~ | Spec §4.4 | ~~中~~ | ✅ HotkeyManager → ClipboardEngine.detectKeysInClipboard() → 內建 22 種 pattern 偵測 → confidence 三階路由 → VaultManager 存儲 |
 | ~~Linked Key Groups (sequential paste)~~ | Spec §6.3 | ~~中~~ | ✅ `LinkedGroup`/`GroupEntry`/`SequentialPasteEngine` 完成、Settings UI 群組管理（CRUD）、`request_paste_group` IPC handler |
 | ~~Terminal masking (Shielded Terminal)~~ | Spec §3.2 | ~~中~~ | 🧪 實驗性。node-pty proxy + DEC 2026 sync block buffering + ANSI-aware masking。Known limitation: Rewind 確認頁部分洩漏 |
+| ~~System-wide masking (Accessibility overlay)~~ | Spec §3.3 | ~~中~~ | 🧪 實驗性。AXObserver + AXBoundsForRange + NSPanel overlay。Settings 可開關，Demo Mode 附加功能。Known limitation: 僅掃描 focused element、copy/paste 不安全 |
 | Shortcut conflict detection | Spec §4.4 | 低 | |
 | Import / Export vault | Spec §9.1 | 低 | |
 
