@@ -103,6 +103,9 @@ These are absolute rules — never violate them:
 - **Clipboard capture whitespace stripping**: `detectKeysInClipboard()` strips all whitespace and newlines from clipboard content before pattern matching (`components(separatedBy: .whitespacesAndNewlines).joined()`). API keys never contain spaces, but clipboard copy may introduce line breaks from word-wrap.
 - **Clipboard capture built-in patterns**: `ClipboardEngine.builtInCapturePatterns` contains 22 well-known API key patterns (OpenAI, Anthropic, GitHub, AWS, Google, Stripe, etc.) for detecting NEW keys not yet in the vault. This is separate from `patternCacheEntries()` which only matches stored keys.
 - **NSAlert in menu bar app**: Must call `alert.layout()` then set `alert.window.level = .floating` + `orderFrontRegardless()` before `runModal()`. Without this, the alert either doesn't appear or creates a dock icon. Do NOT use `setActivationPolicy(.regular)`.
+- **Terminal masking sync block buffering** (experimental): Shielded Terminal buffers PTY output by detecting DEC 2026 sync block markers (`\x1b[?2026h`/`\x1b[?2026l`). Complete sync blocks are masked atomically. Non-sync data uses 30ms timeout buffer. This matches claude-chill's approach.
+- **Terminal masking ANSI-aware matching**: `maskTerminalOutput()` strips ANSI escape codes AND all whitespace (spaces, tabs, newlines) before regex matching. Ink word-wraps long keys with `\r\n` + indentation; stripping all whitespace allows regex to match keys across visual line breaks. Structural characters (ANSI + whitespace) within matched ranges are preserved in output via `extractStructural()`.
+- **Terminal masking node-pty loading**: Triple fallback: (1) `require('node-pty')`, (2) `require(vscode.env.appRoot + '/node_modules.asar.unpacked/node-pty')`, (3) `require(vscode.env.appRoot + '/node_modules/node-pty')`. Falls back to `child_process.spawn` line-mode terminal.
 
 ## Documentation
 

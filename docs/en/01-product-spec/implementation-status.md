@@ -34,6 +34,7 @@
 |---------|-------------|----------|---------|
 | ~~`⌃⌥⌘V` capture clipboard~~ | Spec §4.4 | ~~Medium~~ | ✅ HotkeyManager → ClipboardEngine.detectKeysInClipboard() → 22 built-in patterns → 3-tier confidence routing → VaultManager store |
 | ~~Linked Key Groups (sequential paste)~~ | Spec §6.3 | ~~Medium~~ | ✅ `LinkedGroup`/`GroupEntry`/`SequentialPasteEngine` complete, Settings UI group management (CRUD), `request_paste_group` IPC handler |
+| ~~Terminal masking (Shielded Terminal)~~ | Spec §3.2 | ~~Medium~~ | 🧪 Experimental. node-pty proxy + DEC 2026 sync block buffering + ANSI-aware masking. Known limitation: Rewind confirmation page partial leak |
 | Shortcut conflict detection | Spec §4.4 | Low | |
 | Import / Export vault | Spec §9.1 | Low | |
 

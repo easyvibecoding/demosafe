@@ -26,6 +26,16 @@
         "command": "demosafe.pasteKey",
         "title": "DemoSafe: Paste Key",
         "icon": "$(key)"
+      },
+      {
+        "command": "demosafe.openShieldedTerminal",
+        "title": "DemoSafe: Open Shielded Terminal",
+        "icon": "$(shield)"
+      },
+      {
+        "command": "demosafe.openTerminalWithCommand",
+        "title": "DemoSafe: Open Terminal With Command",
+        "icon": "$(terminal)"
       }
     ],
     "keybindings": [
@@ -38,11 +48,16 @@
         "command": "demosafe.pasteKey",
         "key": "ctrl+alt+space",
         "mac": "ctrl+alt+space"
+      },
+      {
+        "command": "demosafe.openShieldedTerminal",
+        "key": "ctrl+shift+t",
+        "mac": "ctrl+shift+t"
       }
     ]
   },
   "scripts": {
-    "build": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
+    "build": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --external:node-pty --format=cjs --platform=node",
     "watch": "npm run build -- --watch",
     "type-check": "tsc --noEmit",
     "lint": "eslint --ext .ts src/",
